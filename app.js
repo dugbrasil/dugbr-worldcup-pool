@@ -333,7 +333,10 @@ function getStats(pid){
 }
 
 // ===== RENDER ALL =====
-function renderAll(){renderLeaderboard(); renderMatches(); renderMyBets(); renderRivalries(); renderAwards(); renderChampBanner(); renderSchedule(); renderPrize(); renderChat()}
+function renderAll(){
+  [renderLeaderboard, renderMatches, renderMyBets, renderRivalries, renderAwards, renderChampBanner, renderSchedule, renderPrize, renderChat]
+  .forEach(fn=>{try{fn()}catch(e){console.error(fn.name+' error:',e)}});
+}
 
 // ===== DYNAMIC PRIZE =====
 function renderPrize(){
@@ -577,6 +580,7 @@ function changeChamp(){
 function renderSchedule(){
   // Brazil path
   const bp=document.getElementById('brazil-path');
+  if(!bp)return; // Schedule tab might not be in the HTML yet
   const brMatches=M.filter(m=>m.h==='BRA'||m.a==='BRA');
   bp.innerHTML=`<div class="brazil-path-card">${brMatches.map(m=>{const ko=new Date(m.k);const res=matchResults[m.id];
     const time=ko.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Sao_Paulo'});
@@ -585,10 +589,11 @@ function renderSchedule(){
       <div class="bp-meta">${date}<br>${time} BRT · ${m.v}</div></div>`}).join('')}</div>`;
   // Groups grid
   const gg=document.getElementById('groups-grid');
-  gg.innerHTML=Object.entries(GROUPS).map(([g,teams])=>`<div class="group-card${g==='C'?' brazil-group':''}">
+  if(gg)gg.innerHTML=Object.entries(GROUPS).map(([g,teams])=>`<div class="group-card${g==='C'?' brazil-group':''}">
     <div class="group-card-title">Group ${g}</div>${teams.map(c=>`<div class="group-team"><span class="flag">${T[c].f}</span> ${T[c].n}</div>`).join('')}</div>`).join('');
   // Full schedule
-  const fs=document.getElementById('full-schedule'); const now=new Date(); const todayStr=now.toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+  const fs=document.getElementById('full-schedule'); if(!fs)return;
+  const now=new Date(); const todayStr=now.toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
   const groupMatches=M.filter(m=>m.g);
   const byDate={}; groupMatches.forEach(m=>{const d=new Date(m.k).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); if(!byDate[d])byDate[d]=[];byDate[d].push(m)});
   fs.innerHTML=Object.entries(byDate).map(([d,ms])=>`<div class="day-label">${d}</div>${ms.map(m=>{
@@ -599,7 +604,7 @@ function renderSchedule(){
       <span class="sched-meta">Group ${m.g} · ${time} BRT · ${m.v}${res?`<span class="sched-score">${res.h}×${res.a}</span>`:''}</span></div>`}).join('')}`).join('');
   // Knockout
   const kb=document.getElementById('knockout-bracket');
-  const rounds={R32:'Round of 32',R16:'Round of 16',QF:'Quarter-finals',SF:'Semi-finals','3rd':'3rd Place Match',Final:'Final'};
+  if(kb){const rounds={R32:'Round of 32',R16:'Round of 16',QF:'Quarter-finals',SF:'Semi-finals','3rd':'3rd Place Match',Final:'Final'};
   const koMatches=M.filter(m=>m.r);
   const byRound={}; koMatches.forEach(m=>{if(!byRound[m.r])byRound[m.r]=[];byRound[m.r].push(m)});
   kb.innerHTML=Object.entries(rounds).map(([r,label])=>{const ms=byRound[r]||[];if(!ms.length)return'';
@@ -607,15 +612,16 @@ function renderSchedule(){
       const date=ko.toLocaleDateString('en-US',{month:'short',day:'numeric'}),time=ko.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Sao_Paulo'});
       const hm=T[m.h],aw=T[m.a],tbd=m.h==='TBD';
       return `<div class="knockout-match"><span class="ko-teams${tbd?' ko-tbd':''}">${hm.f} ${hm.n} vs ${aw.n} ${aw.f}</span>
-        <span class="ko-meta">${date} · ${time} BRT · ${m.v}</span></div>`}).join('')}</div>`}).join('');
+        <span class="ko-meta">${date} · ${time} BRT · ${m.v}</span></div>`}).join('')}</div>`}).join('');}
   // Venues
   const vl=document.getElementById('venues-list');
-  const venues={}; M.forEach(m=>{if(!venues[m.v])venues[m.v]=0;venues[m.v]++});
+  if(vl){const venues={}; M.forEach(m=>{if(!venues[m.v])venues[m.v]=0;venues[m.v]++});
   const venueCountry=v=>{const mx=['Mexico City','Guadalajara','Monterrey'];const ca=['Toronto','Vancouver'];return mx.some(x=>v.includes(x))?'🇲🇽':ca.some(x=>v.includes(x))?'🇨🇦':'🇺🇸'};
   vl.innerHTML=Object.entries(venues).sort((a,b)=>b[1]-a[1]).map(([v,c])=>`<div class="venue-item"><span class="venue-flag">${venueCountry(v)}</span>
-    <span class="venue-name">${v}</span><span class="venue-matches">${c} matches</span></div>`).join('');
+    <span class="venue-name">${v}</span><span class="venue-matches">${c} matches</span></div>`).join('');}
   // Key dates
-  document.getElementById('key-dates').innerHTML=[
+  const kd=document.getElementById('key-dates');
+  if(kd)kd.innerHTML=[
     ['Jun 11','Group stage begins'],['Jun 22','Champion picks lock'],['Jun 27','Group stage ends'],
     ['Jun 28','Round of 32'],['Jul 4','Round of 16'],['Jul 9','Quarter-finals'],
     ['Jul 14','Semi-finals'],['Jul 18','3rd place match'],['Jul 19','🏆 FINAL (New York NJ)']
@@ -636,15 +642,19 @@ function sendMsg(){
 function renderChat(){
   const wall=document.getElementById('chat-wall');
   if(!wall)return;
+  if(!allMessages||!allMessages.length){wall.innerHTML='<p class="info-text" style="padding:12px">No messages yet. Be the first to post!</p>';return}
   wall.innerHTML=allMessages.slice(-20).reverse().map(m=>{
-    const ini=m.name?m.name.split(' ').map(word=>word[0]).join(''):'?';
+    if(!m)return'';
+    const name=m.name||'Unknown';
+    const ini=name.split(' ').map(word=>(word||'')[0]||'').join('')||'?';
     const bot=m.author==='bot';
-    const ago=timeAgo(m.ts);
+    const ago=m.ts?timeAgo(m.ts):'';
+    const text=m.text||'';
     return `<div class="chat-msg"><div class="chat-avatar${bot?' bot':''}">${bot?'🤖':ini}</div>
-      <div class="chat-text"><span class="chat-author">${m.name||'DUG Bot'}</span> — ${esc(m.text)} <span class="chat-time">${ago}</span></div></div>`}).join('');
+      <div class="chat-text"><span class="chat-author">${esc(name)}</span> — ${esc(text)} <span class="chat-time">${ago}</span></div></div>`}).join('');
 }
 function timeAgo(ts){const d=Date.now()-ts,m=Math.floor(d/6e4); if(m<1)return'now'; if(m<60)return m+'m'; const h=Math.floor(m/60); if(h<24)return h+'h'; return Math.floor(h/24)+'d'}
-function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 
 // ===== ADMIN =====
 function setupAdmin(){
