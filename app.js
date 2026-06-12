@@ -220,8 +220,18 @@ function setupFirebaseListeners(){
   db.ref('matchFacts').on('value',s=>{matchFacts=s.val()||{}});
   
   // FIX: Removed .orderByChild('ts') to prevent Firebase from filtering out messages.
-db.ref('messages').on('value', s => {
-    console.log("🚨 RAW FIREBASE DATA:", s.val());
+// No complex sorting or filtering needed anymore!
+  db.ref('messages').limitToLast(50).on('value', s => {
+    allMessages = []; 
+    
+    s.forEach(c => {
+      allMessages.push({ id: c.key, ...c.val() });
+    });
+    
+    // 🔍 This should now output: "ARRAY CHECK: 14"
+    console.log("👉 ARRAY CHECK: Total items in allMessages =", allMessages.length);
+    
+    if (currentUser) renderChat();
   });
 }
 
