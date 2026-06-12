@@ -361,10 +361,12 @@ function renderChampBanner(){
 }
 
 // ===== MATCHES =====
+function matchDateBRT(m){return new Date(m.k).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'})}
 function renderMatches(filter='today'){
-  const c=document.getElementById('matches-list'); const now=new Date(); const todayStr=now.toISOString().slice(0,10);
-  let filtered=M.filter(m=>m.h!=='TBD'); // only show matches with known teams
-  if(filter==='today')filtered=filtered.filter(m=>m.k.slice(0,10)===todayStr);
+  const c=document.getElementById('matches-list'); const now=new Date();
+  const todayStr=now.toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+  let filtered=M.filter(m=>m.h!=='TBD');
+  if(filter==='today')filtered=filtered.filter(m=>matchDateBRT(m)===todayStr);
   else if(filter==='upcoming')filtered=filtered.filter(m=>new Date(m.k)>now&&!matchResults[m.id]);
   else if(filter==='completed')filtered=filtered.filter(m=>matchResults[m.id]);
   if(filtered.length===0){c.innerHTML='<div class="empty-state"><div>⚽</div>No matches for this filter</div>';return}
@@ -476,11 +478,11 @@ function renderSchedule(){
   gg.innerHTML=Object.entries(GROUPS).map(([g,teams])=>`<div class="group-card${g==='C'?' brazil-group':''}">
     <div class="group-card-title">Group ${g}</div>${teams.map(c=>`<div class="group-team"><span class="flag">${T[c].f}</span> ${T[c].n}</div>`).join('')}</div>`).join('');
   // Full schedule
-  const fs=document.getElementById('full-schedule'); const now=new Date(); const todayStr=now.toISOString().slice(0,10);
+  const fs=document.getElementById('full-schedule'); const now=new Date(); const todayStr=now.toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
   const groupMatches=M.filter(m=>m.g);
   const byDate={}; groupMatches.forEach(m=>{const d=new Date(m.k).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); if(!byDate[d])byDate[d]=[];byDate[d].push(m)});
   fs.innerHTML=Object.entries(byDate).map(([d,ms])=>`<div class="day-label">${d}</div>${ms.map(m=>{
-    const ko=new Date(m.k),res=matchResults[m.id],past=ko<now,today=m.k.slice(0,10)===todayStr,isBr=m.h==='BRA'||m.a==='BRA';
+    const ko=new Date(m.k),res=matchResults[m.id],past=ko<now,today=matchDateBRT(m)===todayStr,isBr=m.h==='BRA'||m.a==='BRA';
     const time=ko.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Sao_Paulo'});
     return `<div class="schedule-match${past?' past':''}${today?' today':''}${isBr?' brazil-match':''}">
       <span class="sched-teams">${T[m.h].f} ${T[m.h].n} vs ${T[m.a].n} ${T[m.a].f}</span>
