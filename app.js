@@ -1,6 +1,8 @@
-/* DUG WORLD CUP 2026 POOL - v3 */
+/* DUGbr WORLD CUP 2026 POOL - v3 */
 
-// ===== CONFIG (UPDATE THESE) =====
+// ===== CONFIG =====
+// NOTE: Firebase API keys are designed to be public (per Google's docs).
+// Security is enforced by Firebase Database Rules, not the API key.
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyD8jOMPKgjmxVrwzEofrho-9YCwAcjZvGk",
   authDomain: "dugbr-worldcup-pool.firebaseapp.com",
@@ -10,29 +12,31 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "211261594337",
   appId: "1:211261594337:web:edb00939a6122e75aef5a0"
 };
-const ADMIN_PASS = "dug2026";
+// Admin password stored as SHA-256 hash (original not in source)
+const ADMIN_HASH = "b2187fec904b5de878ba723ac9d25576ac0758638f290ea2642c62b389f02631";
 const LOCKOUT_H = 1;
 const BUY_IN = 75;
 const CHAMP_LOCK = new Date("2026-06-23T02:59:00Z"); // June 22 23:59 BRT
-const PIX_CODE = "00020126870014br.gov.bcb.pix0136218f6a2a-ee7c-42e9-a4c6-8e03a006f3af0225DUGBr World Cup 2026 Pool520400005303986540575.005802BR5919WILSON SOUZA DUARTE6014RIO DE JANEIRO62580520SAN2026061200485085350300017br.gov.bcb.brcode01051.0.063047306";
+// PIX code loaded from Firebase at runtime (not stored in source)
+let PIX_CODE = "";
 const SITE_URL = "https://dugbrasil.github.io/dugbr-worldcup-pool/";
 
-// ===== PLAYERS =====
+// ===== PLAYERS (no emails in public code) =====
 const PLAYERS = [
-  {id:"p01",name:"Caio Castro",email:"caioc@dug.com"},
-  {id:"p02",name:"Carlos Belem",email:"carlosb@dug.com"},
-  {id:"p03",name:"Carlos Saraiva",email:"carloss@dug.com"},
-  {id:"p04",name:"Cauê Ponte",email:"cauep@dug.com"},
-  {id:"p05",name:"Cleberton Oliveira",email:"clebertono@dug.com"},
-  {id:"p06",name:"Ed Ramos",email:"edmarleyr@dug.com"},
-  {id:"p07",name:"Jair Luiz",email:"jaira@dug.com"},
-  {id:"p08",name:"Jaqueline Krueger",email:"jaquelinek@dug.com"},
-  {id:"p09",name:"Luis Cypriano",email:"luisc@dug.com"},
-  {id:"p10",name:"Luiz Felão",email:"luizf@dug.com"},
-  {id:"p11",name:"Márcia Corredera",email:"marciac@dug.com"},
-  {id:"p12",name:"Rafaela Rossi",email:"rafaelar@dug.com"},
-  {id:"p13",name:"Valter Marques",email:"valterm@dug.com"},
-  {id:"p14",name:"Wilson Duarte",email:"wilsond@dug.com"}
+  {id:"p01",name:"Caio Castro"},
+  {id:"p02",name:"Carlos Belem"},
+  {id:"p03",name:"Carlos Saraiva"},
+  {id:"p04",name:"Cauê Ponte"},
+  {id:"p05",name:"Cleberton Oliveira"},
+  {id:"p06",name:"Ed Ramos"},
+  {id:"p07",name:"Jair Luiz"},
+  {id:"p08",name:"Jaqueline Krueger"},
+  {id:"p09",name:"Luis Cypriano"},
+  {id:"p10",name:"Luiz Felão"},
+  {id:"p11",name:"Márcia Corredera"},
+  {id:"p12",name:"Rafaela Rossi"},
+  {id:"p13",name:"Valter Marques"},
+  {id:"p14",name:"Wilson Duarte"}
 ];
 
 // ===== TEAMS (48) =====
@@ -182,17 +186,23 @@ const M = [
 // ===== STATE =====
 let db=null, currentUser=null, allBets={}, allMessages=[], matchResults={}, playerStatus={}, champions={};
 
+// ===== CRYPTO =====
+async function sha256(str){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+
 // ===== INIT =====
 function initApp(){
   try{
     firebase.initializeApp(FIREBASE_CONFIG);
     db=firebase.database();
     setupFirebaseListeners();
+    // Load PIX code from Firebase
+    db.ref('config/pixCode').once('value',s=>{PIX_CODE=s.val()||''; setupPIXButtons()});
   }catch(e){
     console.warn("Firebase not configured, localStorage mode:",e.message);
     loadLS();
+    setupPIXButtons();
   }
-  setupLogin(); setupNav(); setupFilters(); setupAdmin(); setupChat(); setupPIXButtons();
+  setupLogin(); setupNav(); setupFilters(); setupAdmin(); setupChat();
 }
 
 // ===== LOCAL STORAGE =====
@@ -236,11 +246,32 @@ function setupLogin(){
   PLAYERS.forEach(p=>{const o=document.createElement('option'); o.value=p.id; o.textContent=p.name; sel.appendChild(o)});
   Object.entries(T).filter(([c])=>c!=='TBD').sort((a,b)=>a[1].n.localeCompare(b[1].n)).forEach(([c,t])=>{
     const o=document.createElement('option'); o.value=c; o.textContent=`${t.f} ${t.n}`; chSel.appendChild(o)});
+  // Check if already logged in locally
   const saved=localStorage.getItem('dp_user');
   if(saved){currentUser=PLAYERS.find(p=>p.id===saved); if(currentUser){showApp(); return}}
-  sel.addEventListener('change',()=>{if(sel.value){chSec.style.display='block'; nextBtn.disabled=!chSel.value}else{chSec.style.display='none'; nextBtn.disabled=true}});
-  chSel.addEventListener('change',()=>nextBtn.disabled=!sel.value||!chSel.value);
-  nextBtn.addEventListener('click',()=>{step1.style.display='none'; step2.style.display='block'});
+  // When user selects name, check if they already have a champion in Firebase
+  sel.addEventListener('change',()=>{
+    if(!sel.value){chSec.style.display='none'; nextBtn.disabled=true; return}
+    const existingChamp=champions[sel.value];
+    if(existingChamp){
+      // Returning user: skip champion pick, go straight to enter
+      chSec.style.display='none';
+      nextBtn.textContent='Next: Enter the pool';
+      nextBtn.disabled=false;
+      nextBtn.onclick=()=>{
+        currentUser=PLAYERS.find(p=>p.id===sel.value);
+        localStorage.setItem('dp_user',sel.value);
+        showApp();
+      };
+    } else {
+      // New user: show champion selection
+      chSec.style.display='block';
+      nextBtn.textContent='Next: Payment';
+      nextBtn.disabled=!chSel.value;
+      nextBtn.onclick=()=>{step1.style.display='none'; step2.style.display='block'};
+    }
+  });
+  chSel.addEventListener('change',()=>{if(!champions[sel.value])nextBtn.disabled=!sel.value||!chSel.value});
   enterBtn.addEventListener('click',()=>{
     currentUser=PLAYERS.find(p=>p.id===sel.value); if(!currentUser)return;
     localStorage.setItem('dp_user',sel.value);
@@ -301,7 +332,22 @@ function getStats(pid){
 }
 
 // ===== RENDER ALL =====
-function renderAll(){renderLeaderboard(); renderMatches(); renderMyBets(); renderRivalries(); renderAwards(); renderChampBanner(); renderSchedule()}
+function renderAll(){renderLeaderboard(); renderMatches(); renderMyBets(); renderRivalries(); renderAwards(); renderChampBanner(); renderSchedule(); renderPrize()}
+
+// ===== DYNAMIC PRIZE =====
+function renderPrize(){
+  const activeCount=PLAYERS.filter(p=>isActive(p.id)).length;
+  const pool=activeCount*BUY_IN;
+  document.getElementById('prize-pool-amount').textContent=`R$${pool.toLocaleString()}`;
+  // Update prize page subtitle
+  const sub=document.querySelector('.prize-pool-sub');
+  if(sub)sub.textContent=`${activeCount} players × R$${BUY_IN} buy-in`;
+  // Update prize cards (find by icon)
+  const cards=document.querySelectorAll('.prize-card-content .prize-card-desc');
+  if(cards[0])cards[0].innerHTML=`Wins <strong>25% of the pool (R$${Math.round(pool*0.25)})</strong> and hosts the team lunch. The winner picks the restaurant. R$${Math.round(pool*0.5)} (50% of the pool) funds the lunch.`;
+  if(cards[1])cards[1].innerHTML=`<strong>15% of the pool (R$${Math.round(pool*0.15)})</strong>`;
+  if(cards[2])cards[2].innerHTML=`<strong>10% of the pool (R$${Math.round(pool*0.1)})</strong>`;
+}
 
 // ===== LEADERBOARD =====
 function renderLeaderboard(){
@@ -535,8 +581,9 @@ function esc(s){const d=document.createElement('div');d.textContent=s;return d.i
 
 // ===== ADMIN =====
 function setupAdmin(){
-  document.getElementById('admin-login-btn').addEventListener('click',()=>{
-    if(document.getElementById('admin-pass').value===ADMIN_PASS){document.getElementById('admin-gate').style.display='none';document.getElementById('admin-panel').style.display='block';renderAdmin()}
+  document.getElementById('admin-login-btn').addEventListener('click',async()=>{
+    const hash=await sha256(document.getElementById('admin-pass').value);
+    if(hash===ADMIN_HASH){document.getElementById('admin-gate').style.display='none';document.getElementById('admin-panel').style.display='block';renderAdmin()}
     else alert('Wrong password')});
   document.getElementById('btn-export').addEventListener('click',exportCSV);
   document.getElementById('btn-recalc').addEventListener('click',()=>{renderAll();alert('Done!')});
@@ -548,10 +595,10 @@ function renderAdmin(){
   // Players
   const pc=document.getElementById('admin-players');
   pc.innerHTML=PLAYERS.map(p=>{const st=isActive(p.id);const ch=champions[p.id]?T[champions[p.id]]?.f:'';
-    return `<div class="admin-player-row"><span class="admin-player-name">${ch} ${p.name}</span><span class="admin-player-email">${p.email}</span>
+    return `<div class="admin-player-row"><span class="admin-player-name">${ch} ${p.name}</span>
       <span class="admin-player-status ${st?'status-active':'status-pending'}">${st?'Active':'Pending'}</span>
       ${!st?`<button class="btn-primary btn-sm" onclick="approvePlayer('${p.id}')">Approve</button>`:
-      `<button class="btn-outline btn-sm" onclick="copyConfirmEmail('${p.id}')">📋 Email</button>`}</div>`}).join('');
+      `<button class="btn-outline btn-sm" onclick="copyConfirmEmail('${p.id}')">📋 Confirm email</button>`}</div>`}).join('');
   // Match results
   const now=new Date();
   const past=M.filter(m=>new Date(m.k)<=now&&m.h!=='TBD');
@@ -595,8 +642,10 @@ function postBotMsg(){
 }
 
 function copyInvite(){
-  const url=SITE_URL||'[SITE LINK]';
-  const txt=`Pessoal,\n\nWe're running a World Cup prediction pool for DUG Brasil. Simple rules, real money, and a team lunch at stake.\n\nThe game:\nPredict the final score for each match. You earn points based on how close you get:\n- Exact score: 10 points\n- Correct goal difference: 5 points\n- Correct winner/draw: 3 points\n\nYou also pick a champion team when you register. If they go far, you earn bonus points (+15 for winning, +5 for the final, +3 for the semis). You can change your pick until June 22.\n\nPrize pool:\nBuy-in: R$75 per person\n- 50% (R$525) funds a team lunch, restaurant chosen by the winner\n- 25% (R$263) to 1st place\n- 15% (R$158) to 2nd place\n- 10% (R$105) to 3rd place\n\nTo join:\n1. Open the pool: ${url}\n2. Select your name from the dropdown\n3. Pick your World Cup champion team\n4. Scan the QR code or copy the PIX key to pay R$75\n\nYour account will be activated once I confirm the payment.\n\nBets lock 1 hour before each match kickoff. The pool covers all 104 matches through the final on July 19.\n\nThe site has a live leaderboard, weekly awards, head-to-head rivalries, full tournament schedule, and a trash talk wall.\n\nQuestions? Just reach out.\n\nWilson`;
+  const url=SITE_URL;
+  const ac=PLAYERS.filter(p=>isActive(p.id)).length||14;
+  const pool=ac*BUY_IN;
+  const txt=`Pessoal,\n\nWe're running a World Cup prediction pool for DUG Brasil. Simple rules, real money, and a team lunch at stake.\n\nThe game:\nPredict the final score for each match. You earn points based on how close you get:\n- Exact score: 10 points\n- Correct goal difference: 5 points\n- Correct winner/draw: 3 points\n\nYou also pick a champion team when you register. If they go far, you earn bonus points (+15 for winning, +5 for the final, +3 for the semis). You can change your pick until June 22.\n\nPrize pool:\nBuy-in: R$${BUY_IN} per person\n- 50% (R$${Math.round(pool*0.5)}) funds a team lunch, restaurant chosen by the winner\n- 25% (R$${Math.round(pool*0.25)}) to 1st place\n- 15% (R$${Math.round(pool*0.15)}) to 2nd place\n- 10% (R$${Math.round(pool*0.1)}) to 3rd place\n\nTo join:\n1. Open the pool: ${url}\n2. Select your name from the dropdown\n3. Pick your World Cup champion team\n4. Scan the QR code or copy the PIX key to pay R$${BUY_IN}\n\nYour account will be activated once I confirm the payment.\n\nBets lock 1 hour before each match kickoff. The pool covers all 104 matches through the final on July 19.\n\nThe site has a live leaderboard, weekly awards, head-to-head rivalries, full tournament schedule, and a trash talk wall.\n\nQuestions? Just reach out.\n\nWilson`;
   navigator.clipboard.writeText(txt).then(()=>alert('Invite email copied!'));
 }
 
