@@ -218,8 +218,17 @@ function setupFirebaseListeners(){
   db.ref('playerStatus').on('value',s=>{playerStatus=s.val()||{}; if(currentUser)updatePendingState()});
   db.ref('champions').on('value',s=>{champions=s.val()||{}; if(currentUser)renderAll()});
   db.ref('matchFacts').on('value',s=>{matchFacts=s.val()||{}});
-  db.ref('messages').orderByChild('ts').limitToLast(50).on('value',s=>{
-    allMessages=[]; s.forEach(c=>allMessages.push({id:c.key,...c.val()})); if(currentUser)renderChat()});
+  
+  // FIX: Removed .orderByChild('ts') to prevent Firebase from filtering out messages.
+  db.ref('messages').limitToLast(50).on('value', s => {
+    allMessages = []; 
+    s.forEach(c => allMessages.push({ id: c.key, ...c.val() }));
+    
+    // FIX: Sort client-side instead. (Falls back to 0 if 'ts' is missing)
+    allMessages.sort((a, b) => (a.ts || 0) - (b.ts || 0)); 
+    
+    if (currentUser) renderChat();
+  });
 }
 
 // ===== PIX =====
