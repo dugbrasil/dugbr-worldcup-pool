@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DUG World Cup 2026 Pool</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+</head>
+<body>
+
+<header id="app-header" style="display:none">
+  <div class="header-top">
+    <div class="logo-area"><div class="logo">DUG</div><div class="logo-sub">World Cup 2026 Pool</div></div>
+    <div class="user-area" id="user-area"></div>
+  </div>
+  <div class="seismic-wave"><svg viewBox="0 0 1200 32" preserveAspectRatio="none">
+    <path d="M0,20Q25,8 50,20T100,20T150,20T200,20T250,20T300,20T350,20T400,20T450,20T500,20T550,20T600,20T650,20T700,20T750,20T800,20T850,20T900,20T950,20T1000,20T1050,20T1100,20T1150,20T1200,20" fill="none" stroke="#FF9100" stroke-width="1.5" opacity=".5"/>
+    <path d="M0,16Q30,4 60,16T120,16T180,16T240,16T300,16T360,16T420,16T480,16T540,16T600,16T660,16T720,16T780,16T840,16T900,16T960,16T1020,16T1080,16T1140,16T1200,16" fill="none" stroke="#F3BA6D" stroke-width="1" opacity=".4"/>
+  </svg></div>
+  <nav id="main-nav">
+    <button class="nav-btn active" data-tab="leaderboard">🏆 Leaderboard</button>
+    <button class="nav-btn" data-tab="matches">⚽ Matches</button>
+    <button class="nav-btn" data-tab="mybets">📊 My Bets</button>
+    <button class="nav-btn" data-tab="schedule">📅 Schedule</button>
+    <button class="nav-btn" data-tab="prize">💰 Prize</button>
+    <button class="nav-btn" data-tab="admin">⚙️ Admin</button>
+  </nav>
+</header>
+
+<!-- ========== LOGIN SCREEN ========== -->
+<div id="login-screen" class="screen">
+  <div class="login-card">
+    <div class="login-logo">DUG</div>
+    <div class="login-sub">World Cup 2026 Pool</div>
+    <div class="login-wave"><svg viewBox="0 0 400 40" preserveAspectRatio="none"><path d="M0,20Q25,8 50,20T100,20T150,20T200,20T250,20T300,20T350,20T400,20" fill="none" stroke="#FF9100" stroke-width="2" opacity=".4"/></svg></div>
+
+    <div id="login-step1">
+      <p class="login-text">Pick your name to join the pool</p>
+      <select id="login-select"><option value="">Select your name...</option></select>
+      <div id="champion-section" style="display:none">
+        <p class="login-text" style="margin-top:16px">Pick your World Cup champion</p>
+        <select id="champion-select"><option value="">Select a team...</option></select>
+      </div>
+      <button id="login-next-btn" class="btn-primary" disabled>Next: Payment</button>
+    </div>
+
+    <div id="login-step2" style="display:none">
+      <p class="login-text">Scan the QR code or copy the PIX key to pay</p>
+      <div class="pix-card">
+        <img src="pix-qr.png" alt="PIX QR Code" class="pix-qr-img">
+        <p class="pix-amount">R$75.00</p>
+        <p class="pix-recipient">Wilson Souza Duarte</p>
+        <button id="pix-copy-btn" class="btn-outline btn-sm">📋 Copy PIX key</button>
+        <p id="pix-copied" class="pix-copied" style="display:none">✓ Copied!</p>
+      </div>
+      <button id="login-enter-btn" class="btn-primary">Enter the pool</button>
+      <p class="login-footnote">Your account will be activated once payment is confirmed.</p>
+    </div>
+
+    <p class="login-footnote">14 players · R$75 buy-in · Winner hosts lunch</p>
+  </div>
+</div>
+
+<!-- ========== PENDING BANNER ========== -->
+<div id="pending-banner" class="pending-banner" style="display:none">
+  ⏳ Awaiting PIX confirmation. <a href="#" onclick="switchTab('prize');return false">Pay R$75 via PIX</a> to activate your account.
+</div>
+
+<!-- ========== MAIN APP ========== -->
+<div id="app-content" style="display:none">
+
+  <!-- TAB: LEADERBOARD -->
+  <section id="tab-leaderboard" class="tab-content active">
+    <div class="pool-banner">
+      <div class="pool-stat"><span class="pool-val" id="lb-players">0</span><span class="pool-label">Players</span></div>
+      <div class="pool-stat"><span class="pool-val" id="lb-matches">0</span><span class="pool-label">Matches</span></div>
+      <div class="pool-stat"><span class="pool-val" id="lb-pool">R$0</span><span class="pool-label">Prize pool</span></div>
+      <div class="pool-stat"><span class="pool-val" id="lb-exact">0</span><span class="pool-label">Exact scores</span></div>
+    </div>
+    <div class="section-label">🏅 Weekly awards</div>
+    <div class="awards-row" id="awards-row">
+      <div class="award-card"><div class="award-icon">🔮</div><div class="award-title">The Oracle</div><div class="award-name" id="award-oracle">—</div></div>
+      <div class="award-card"><div class="award-icon">🚀</div><div class="award-title">Hot Streak</div><div class="award-name" id="award-streak">—</div></div>
+      <div class="award-card"><div class="award-icon">🦥</div><div class="award-title">The Sloth</div><div class="award-name" id="award-sloth">—</div></div>
+    </div>
+    <div class="section-label">📊 Rankings</div>
+    <table class="lb-table"><thead><tr><th class="col-rank">#</th><th>Player</th><th class="col-num">Ex</th><th class="col-num">GD</th><th class="col-num">Out</th><th class="col-pts">Points</th></tr></thead><tbody id="lb-body"></tbody></table>
+    <div class="section-label">⚔️ This week's rivalries</div>
+    <div id="rivalries-container"></div>
+    <div class="section-label">📣 Seismic chatter</div>
+    <div id="chat-wall" class="chat-wall"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Drop some trash talk..." maxlength="200" disabled>
+      <button id="chat-send" class="btn-primary btn-sm" disabled>Send</button>
+    </div>
+  </section>
+
+  <!-- TAB: MATCHES -->
+  <section id="tab-matches" class="tab-content">
+    <div id="champion-banner"></div>
+    <div class="filter-row">
+      <button class="filter-btn active" data-filter="today">Today</button>
+      <button class="filter-btn" data-filter="upcoming">Upcoming</button>
+      <button class="filter-btn" data-filter="completed">Completed</button>
+      <button class="filter-btn" data-filter="all">All</button>
+    </div>
+    <div id="bot-fact" class="bot-fact" style="display:none"></div>
+    <div id="matches-list"></div>
+  </section>
+
+  <!-- TAB: MY BETS -->
+  <section id="tab-mybets" class="tab-content">
+    <div id="my-profile"></div>
+    <div class="section-label">Last 10 predictions</div>
+    <div id="streak-bar" class="streak-bar"></div>
+    <div class="section-label">📋 Bet history</div>
+    <div id="my-bets-list"></div>
+    <div id="change-champion-section"></div>
+  </section>
+
+  <!-- TAB: SCHEDULE (NEW) -->
+  <section id="tab-schedule" class="tab-content">
+    <div class="section-label">🇧🇷 Brazil's path</div>
+    <div id="brazil-path"></div>
+    <div class="section-label">📋 All 12 groups</div>
+    <div id="groups-grid" class="groups-grid"></div>
+    <div class="section-label">📅 Full group stage schedule</div>
+    <div id="full-schedule"></div>
+    <div class="section-label">🏆 Knockout bracket</div>
+    <div id="knockout-bracket"></div>
+    <div class="section-label">🏟️ Venues</div>
+    <div id="venues-list"></div>
+    <div class="section-label">📌 Key dates</div>
+    <div id="key-dates"></div>
+  </section>
+
+  <!-- TAB: PRIZE -->
+  <section id="tab-prize" class="tab-content">
+    <div class="prize-header">
+      <div class="prize-title">💰 Prize Structure</div>
+      <div class="prize-pool-big" id="prize-pool-amount">R$1,050</div>
+      <div class="prize-pool-sub">14 players × R$75 buy-in</div>
+    </div>
+    <div class="prize-card prize-gold"><div class="prize-card-icon">🥇</div><div class="prize-card-content"><div class="prize-card-title">1st place</div><div class="prize-card-desc">Wins <strong>25% of the pool (R$263)</strong> and hosts the team lunch. The winner picks the restaurant. R$525 (50% of the pool) funds the lunch.</div></div></div>
+    <div class="prize-card"><div class="prize-card-icon">🥈</div><div class="prize-card-content"><div class="prize-card-title">2nd place</div><div class="prize-card-desc"><strong>15% of the pool (R$158)</strong></div></div></div>
+    <div class="prize-card"><div class="prize-card-icon">🥉</div><div class="prize-card-content"><div class="prize-card-title">3rd place</div><div class="prize-card-desc"><strong>10% of the pool (R$105)</strong></div></div></div>
+    <div class="section-label">📐 Points system</div>
+    <table class="rules-table"><thead><tr><th>Prediction</th><th>Condition</th><th class="col-pts">Pts</th></tr></thead><tbody>
+      <tr><td>Exact score</td><td>Both scores correct (e.g. 2-1 = 2-1)</td><td class="pts-val">10</td></tr>
+      <tr><td>Goal difference</td><td>Right diff, wrong scores (e.g. 3-2 vs 2-1)</td><td class="pts-val">5</td></tr>
+      <tr><td>Correct outcome</td><td>Right winner/draw, wrong score</td><td class="pts-val">3</td></tr>
+      <tr><td>Wrong</td><td>None of the above</td><td class="pts-val">0</td></tr>
+    </tbody></table>
+    <div class="section-label">🏆 Champion pick bonus</div>
+    <table class="rules-table"><thead><tr><th>Your team...</th><th class="col-pts">Bonus</th></tr></thead><tbody>
+      <tr><td>Wins the World Cup</td><td class="pts-val">+15</td></tr>
+      <tr><td>Reaches the final</td><td class="pts-val">+5</td></tr>
+      <tr><td>Reaches the semi-finals</td><td class="pts-val">+3</td></tr>
+      <tr><td>Eliminated in group stage</td><td class="pts-val">💀</td></tr>
+    </tbody></table>
+    <div class="section-label">🏅 Weekly awards</div>
+    <div class="prize-awards-grid">
+      <div class="prize-award"><span>🔮</span><strong>The Oracle</strong><br>Most exact scores that week</div>
+      <div class="prize-award"><span>🚀</span><strong>Hot Streak</strong><br>3+ correct outcomes in a row</div>
+      <div class="prize-award"><span>🦥</span><strong>The Sloth</strong><br>Missed the most bets that week</div>
+    </div>
+    <div class="section-label">⚖️ Tiebreaker</div>
+    <p class="info-text">If two players finish with the same points: most exact scores wins. Then most goal-difference predictions. Then most correct outcomes. Then earliest registration date.</p>
+    <div class="section-label">💳 PIX Payment</div>
+    <div class="pix-card pix-card-inline">
+      <img src="pix-qr.png" alt="PIX QR Code" class="pix-qr-img">
+      <div>
+        <p class="pix-amount">R$75.00</p>
+        <p class="pix-recipient">Wilson Souza Duarte</p>
+        <button class="btn-outline btn-sm pix-copy-trigger">📋 Copy PIX key</button>
+      </div>
+    </div>
+    <div class="section-label">📝 Details</div>
+    <div class="info-box">
+      <p>The team lunch includes everyone (Rio office + remote via call). The winner picks the restaurant. R$525 covers the lunch. If the bill exceeds R$525, the group splits the extra.</p>
+      <p style="margin-top:8px">Champion picks can be changed until June 22, 23:59 BRT. After that, picks are locked for the rest of the tournament.</p>
+    </div>
+  </section>
+
+  <!-- TAB: ADMIN -->
+  <section id="tab-admin" class="tab-content">
+    <div id="admin-gate" class="admin-gate">
+      <p>Enter admin password:</p>
+      <input type="password" id="admin-pass" placeholder="Password">
+      <button id="admin-login-btn" class="btn-primary btn-sm">Unlock</button>
+    </div>
+    <div id="admin-panel" style="display:none">
+      <div class="section-label">👥 Players</div>
+      <div id="admin-players"></div>
+      <div class="admin-email-actions">
+        <button id="btn-copy-invite" class="btn-outline">📋 Copy invite email</button>
+      </div>
+      <div class="section-label">⏳ Awaiting results</div>
+      <div id="admin-pending"></div>
+      <div class="section-label">✅ Results entered</div>
+      <div id="admin-settled"></div>
+      <div class="section-label">🤖 DUG Bot</div>
+      <div class="admin-bot-row">
+        <input type="text" id="bot-msg-input" placeholder="Type a DUG Bot message..." maxlength="200">
+        <button id="bot-msg-send" class="btn-primary btn-sm">Post</button>
+      </div>
+      <p class="info-text" style="margin-top:6px">Automated messages are managed in the Google Sheet. This posts a manual message to the chat wall.</p>
+      <div class="section-label">🔧 Tools</div>
+      <div class="admin-actions">
+        <button id="btn-export" class="btn-outline">📥 Export CSV</button>
+        <button id="btn-recalc" class="btn-outline">🔄 Recalculate</button>
+      </div>
+      <div class="admin-status" id="admin-status"></div>
+    </div>
+  </section>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
