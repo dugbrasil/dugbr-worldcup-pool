@@ -2,20 +2,21 @@
 
 // ===== CONFIG (UPDATE THESE) =====
 const FIREBASE_CONFIG = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyD8jOMPKgjmxVrwzEofrho-9YCwAcjZvGk",
+  authDomain: "dugbr-worldcup-pool.firebaseapp.com",
+  databaseURL: "https://dugbr-worldcup-pool-default-rtdb.firebaseio.com",
+  projectId: "dugbr-worldcup-pool",
+  storageBucket: "dugbr-worldcup-pool.firebasestorage.app",
+  messagingSenderId: "211261594337",
+  appId: "1:211261594337:web:edb00939a6122e75aef5a0"
 };
+
 const ADMIN_PASS = "dug2026";
 const LOCKOUT_H = 1;
 const BUY_IN = 75;
 const CHAMP_LOCK = new Date("2026-06-23T02:59:00Z"); // June 22 23:59 BRT
 const PIX_CODE = "00020126870014br.gov.bcb.pix0136218f6a2a-ee7c-42e9-a4c6-8e03a006f3af0225DUGBr World Cup 2026 Pool520400005303986540575.005802BR5919WILSON SOUZA DUARTE6014RIO DE JANEIRO62580520SAN2026061200485085350300017br.gov.bcb.brcode01051.0.063047306";
-const SITE_URL = "https://YOUR_USERNAME.github.io/dug-worldcup-pool/";
+const SITE_URL = "https://dugbrasil.github.io/dugbr-worldcup-pool/";
 
 // ===== PLAYERS =====
 const PLAYERS = [
