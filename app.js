@@ -220,16 +220,8 @@ function setupFirebaseListeners(){
   db.ref('matchFacts').on('value',s=>{matchFacts=s.val()||{}});
   
   // FIX: Removed .orderByChild('ts') to prevent Firebase from filtering out messages.
-// Temporarily added console.log to find out where the bottleneck is
-// ADDED: .orderByKey() so Firebase knows exactly how to count the last 50 items
-  db.ref('messages').on('value', s => {
-    allMessages = []; 
-    s.forEach(c => allMessages.push({ id: c.key, ...c.val() }));
-    
-    console.log("👉 DATABASE CHECK 3: Total messages received =", allMessages.length, allMessages);
-    
-    allMessages.sort((a, b) => (a.ts || 0) - (b.ts || 0)); 
-    if (currentUser) renderChat();
+db.ref('messages').on('value', s => {
+    console.log("🚨 RAW FIREBASE DATA:", s.val());
   });
 }
 
