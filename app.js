@@ -10,7 +10,6 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "211261594337",
   appId: "1:211261594337:web:edb00939a6122e75aef5a0"
 };
-
 const ADMIN_PASS = "dug2026";
 const LOCKOUT_H = 1;
 const BUY_IN = 75;
