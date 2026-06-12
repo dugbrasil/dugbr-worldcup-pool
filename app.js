@@ -1,4 +1,4 @@
-/* DUGbr WORLD CUP 2026 POOL - v3 */
+/* DUG WORLD CUP 2026 POOL - v3 */
 
 // ===== CONFIG =====
 // NOTE: Firebase API keys are designed to be public (per Google's docs).
@@ -14,7 +14,7 @@ const FIREBASE_CONFIG = {
 };
 // Admin password stored as SHA-256 hash (original not in source)
 const ADMIN_HASH = "b2187fec904b5de878ba723ac9d25576ac0758638f290ea2642c62b389f02631";
-const LOCKOUT_H = 1;
+const LOCKOUT_H = 2;
 const BUY_IN = 75;
 const CHAMP_LOCK = new Date("2026-06-23T02:59:00Z"); // June 22 23:59 BRT
 // PIX code loaded from Firebase at runtime (not stored in source)
@@ -184,7 +184,7 @@ const M = [
 ];
 
 // ===== STATE =====
-let db=null, currentUser=null, allBets={}, allMessages=[], matchResults={}, playerStatus={}, champions={};
+let db=null, currentUser=null, allBets={}, allMessages=[], matchResults={}, playerStatus={}, champions={}, matchFacts={};
 
 // ===== CRYPTO =====
 async function sha256(str){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')}
@@ -217,6 +217,7 @@ function setupFirebaseListeners(){
   db.ref('results').on('value',s=>{matchResults=s.val()||{}; if(currentUser)renderAll()});
   db.ref('playerStatus').on('value',s=>{playerStatus=s.val()||{}; if(currentUser)updatePendingState()});
   db.ref('champions').on('value',s=>{champions=s.val()||{}; if(currentUser)renderAll()});
+  db.ref('matchFacts').on('value',s=>{matchFacts=s.val()||{}});
   db.ref('messages').orderByChild('ts').limitToLast(50).on('value',s=>{
     allMessages=[]; s.forEach(c=>allMessages.push({id:c.key,...c.val()})); if(currentUser)renderChat()});
 }
@@ -332,7 +333,7 @@ function getStats(pid){
 }
 
 // ===== RENDER ALL =====
-function renderAll(){renderLeaderboard(); renderMatches(); renderMyBets(); renderRivalries(); renderAwards(); renderChampBanner(); renderSchedule(); renderPrize()}
+function renderAll(){renderLeaderboard(); renderMatches(); renderMyBets(); renderRivalries(); renderAwards(); renderChampBanner(); renderSchedule(); renderPrize(); renderChat()}
 
 // ===== DYNAMIC PRIZE =====
 function renderPrize(){
@@ -411,38 +412,61 @@ function matchDateBRT(m){return new Date(m.k).toLocaleDateString('en-CA',{timeZo
 function renderMatches(filter='today'){
   const c=document.getElementById('matches-list'); const now=new Date();
   const todayStr=now.toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+  const isToday=filter==='today';
   let filtered=M.filter(m=>m.h!=='TBD');
   if(filter==='today')filtered=filtered.filter(m=>matchDateBRT(m)===todayStr);
   else if(filter==='upcoming')filtered=filtered.filter(m=>new Date(m.k)>now&&!matchResults[m.id]);
   else if(filter==='completed')filtered=filtered.filter(m=>matchResults[m.id]);
   if(filtered.length===0){c.innerHTML='<div class="empty-state"><div>⚽</div>No matches for this filter</div>';return}
-  const byDate={};filtered.forEach(m=>{const d=new Date(m.k).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); if(!byDate[d])byDate[d]=[];byDate[d].push(m)});
-  let html=''; Object.entries(byDate).forEach(([d,ms])=>{html+=`<div class="day-label">📅 ${d}</div>`; ms.forEach(m=>html+=renderMatchCard(m,now))});
+  const byDate={};filtered.forEach(m=>{const d=new Date(m.k).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'America/Sao_Paulo'}); if(!byDate[d])byDate[d]=[];byDate[d].push(m)});
+  let html=''; Object.entries(byDate).forEach(([d,ms])=>{html+=`<div class="day-label">📅 ${d}</div>`; ms.forEach(m=>html+=renderMatchCard(m,now,isToday))});
+  // Save all floating button (only show if there are unsaved editable matches)
+  const hasEditable=filtered.some(m=>{const ko=new Date(m.k),lock=new Date(ko.getTime()-LOCKOUT_H*36e5); return now<lock&&!matchResults[m.id]&&isActive(currentUser.id)});
+  if(hasEditable)html+=`<div class="save-all-bar"><button class="btn-save-all" id="btn-save-all">💾 Save all bets</button></div>`;
   c.innerHTML=html;
-  c.querySelectorAll('.match-bet-btn:not(.saved):not(.locked-btn)').forEach(b=>b.addEventListener('click',()=>placeBet(b.dataset.mid)));
+  // Attach bet handlers (individual)
+  c.querySelectorAll('.match-bet-btn').forEach(b=>b.addEventListener('click',()=>placeBet(b.dataset.mid)));
+  // Attach save-all handler
+  const saveAllBtn=document.getElementById('btn-save-all');
+  if(saveAllBtn)saveAllBtn.addEventListener('click',saveAllBets);
+  // Attach horoscope handlers
+  c.querySelectorAll('.horoscope-btn').forEach(b=>b.addEventListener('click',()=>horoscopeBet(b.dataset.mid)));
 }
 
-function renderMatchCard(m,now){
+function renderMatchCard(m,now,showFact){
   const hm=T[m.h],aw=T[m.a],ko=new Date(m.k),lock=new Date(ko.getTime()-LOCKOUT_H*36e5),locked=now>=lock;
   const res=matchResults[m.id],bet=allBets[m.id]?.[currentUser.id],pending=!isActive(currentUser.id);
   const time=ko.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Sao_Paulo'});
   const isBrazil=m.h==='BRA'||m.a==='BRA';
+  // Editable: not locked, not settled, player is active
+  const canEdit=!locked&&!res&&!pending;
   // Other bets
   const mBets=allBets[m.id]||{}; const peekHtml=Object.entries(mBets).map(([pid,b])=>{
     const pl=PLAYERS.find(p=>p.id===pid); return pl?`<span class="peek-bet"><strong>${pl.name.split(' ')[0]}</strong> ${b.h}×${b.a}</span>`:''}).join('');
   const bc=Object.keys(mBets).length;
+  // Action button
   let actionBtn='';
   if(res){const sc=`${res.h}×${res.a}`; let rb=''; if(bet){const pt=calcPts(bet.h,bet.a,res.h,res.a);
     if(pt){const lb={exact:'Exact +10',gd:'GD +5',outcome:'Outcome +3',wrong:'Wrong'};const cl={exact:'result-exact',gd:'result-gd',outcome:'result-outcome',wrong:'result-wrong'};
     rb=`<span class="match-result ${cl[pt.t]}">${lb[pt.t]}</span>`}} actionBtn=`<span style="font-size:12px;color:var(--text-muted)">Final: ${sc}</span> ${rb}`}
-  else if(bet)actionBtn=`<button class="match-bet-btn saved">✓ ${bet.h}×${bet.a}</button>`;
-  else if(locked||pending)actionBtn=`<button class="match-bet-btn locked-btn">${pending?'Activate to bet':'🔒 Locked'}</button>`;
+  else if(locked)actionBtn=`<button class="match-bet-btn locked-btn">${bet?`🔒 ${bet.h}×${bet.a}`:'🔒 Locked'}</button>`;
+  else if(pending)actionBtn=`<button class="match-bet-btn locked-btn">Activate to bet</button>`;
+  else if(bet)actionBtn=`<button class="match-bet-btn" data-mid="${m.id}">Update bet</button>`;
   else actionBtn=`<button class="match-bet-btn" data-mid="${m.id}">Place bet</button>`;
-  const dis=locked||bet||res||pending?'disabled':'';
+  // Match fact from Firebase (only in Today view)
+  const fact=showFact&&matchFacts[m.id]?`<div class="match-fact"><span>🤖</span> ${esc(matchFacts[m.id])}</div>`:'';
+  // Horoscope button (only if editable and no bet yet)
+  const horoscope=canEdit?`<button class="horoscope-btn" data-mid="${m.id}" title="Random prediction">🔮</button>`:'';
+  const dis=!canEdit?'disabled':'';
   return `<div class="match-card${isBrazil?' brazil-match':''}">
+    ${fact}
     <div class="match-teams-row"><div class="match-team"><span class="flag">${hm.f}</span> ${hm.n}</div>
-    <div class="match-vs"><input type="number" class="score-input${dis?' locked':''}" id="h-${m.id}" min="0" max="20" value="${bet?bet.h:''}" placeholder="–" ${dis}>
-    <span class="score-sep">×</span><input type="number" class="score-input${dis?' locked':''}" id="a-${m.id}" min="0" max="20" value="${bet?bet.a:''}" placeholder="–" ${dis}></div>
+    <div class="match-vs">
+      <input type="number" class="score-input${!canEdit?' locked':''}" id="h-${m.id}" min="0" max="20" value="${bet?bet.h:''}" placeholder="–" ${dis}>
+      <span class="score-sep">×</span>
+      <input type="number" class="score-input${!canEdit?' locked':''}" id="a-${m.id}" min="0" max="20" value="${bet?bet.a:''}" placeholder="–" ${dis}>
+      ${horoscope}
+    </div>
     <div class="match-team right">${aw.n} <span class="flag">${aw.f}</span></div></div>
     <div class="match-meta"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
     ${m.g?`<span class="match-group">Group ${m.g}</span>`:m.r?`<span class="match-group">${m.r}</span>`:''}<span class="match-info">🕐 ${time} BRT</span>
@@ -457,6 +481,46 @@ function placeBet(mid){
   if(db)db.ref(`bets/${mid}/${currentUser.id}`).set(bet);
   else{if(!allBets[mid])allBets[mid]={}; allBets[mid][currentUser.id]=bet; saveLS()}
   renderMatches(document.querySelector('.filter-btn.active')?.dataset.filter||'today');
+}
+
+function saveAllBets(){
+  let saved=0;
+  const now=new Date();
+  M.forEach(m=>{
+    if(m.h==='TBD'||matchResults[m.id])return;
+    const ko=new Date(m.k),lock=new Date(ko.getTime()-LOCKOUT_H*36e5);
+    if(now>=lock)return;
+    const hEl=document.getElementById(`h-${m.id}`),aEl=document.getElementById(`a-${m.id}`);
+    if(!hEl||!aEl)return;
+    const hv=hEl.value,av=aEl.value;
+    if(hv===''||av==='')return;
+    const existing=allBets[m.id]?.[currentUser.id];
+    if(existing&&existing.h===+hv&&existing.a===+av)return; // no change
+    const bet={h:+hv,a:+av,ts:Date.now()};
+    if(db)db.ref(`bets/${m.id}/${currentUser.id}`).set(bet);
+    else{if(!allBets[m.id])allBets[m.id]={}; allBets[m.id][currentUser.id]=bet;}
+    saved++;
+  });
+  if(!db)saveLS();
+  if(saved>0){alert(`${saved} bet(s) saved!`); renderMatches(document.querySelector('.filter-btn.active')?.dataset.filter||'today')}
+  else alert('No new or changed bets to save.');
+}
+
+// ===== HOROSCOPE PREDICTION GENERATOR =====
+const HOROSCOPE_MSGS=[
+  "The stars say","Mercury is in retrograde, so","Your seismic intuition suggests",
+  "The velocity model predicts","According to the amplitude spectrum","The migration result shows",
+  "A deep reflection from the subsurface reveals","The crossline section whispers","NMO correction confirms",
+  "The stacking velocity says","Your CMP gather indicates","A shallow anomaly suggests",
+  "The frequency spectrum hints at","After careful processing","The signal-to-noise ratio points to"
+];
+function horoscopeBet(mid){
+  const h=Math.floor(Math.random()*4), a=Math.floor(Math.random()*4);
+  document.getElementById(`h-${mid}`).value=h;
+  document.getElementById(`a-${mid}`).value=a;
+  const msg=HOROSCOPE_MSGS[Math.floor(Math.random()*HOROSCOPE_MSGS.length)];
+  const hm=T[M.find(m=>m.id===mid).h], aw=T[M.find(m=>m.id===mid).a];
+  alert(`🔮 ${msg} ${hm.n} ${h} × ${a} ${aw.n}`);
 }
 
 // ===== MY BETS =====
@@ -570,8 +634,11 @@ function sendMsg(){
   inp.value='';
 }
 function renderChat(){
-  const w=document.getElementById('chat-wall');
-  w.innerHTML=allMessages.slice(-20).reverse().map(m=>{const ini=m.name?m.name.split(' ').map(w=>w[0]).join(''):'?';const bot=m.author==='bot';
+  const wall=document.getElementById('chat-wall');
+  if(!wall)return;
+  wall.innerHTML=allMessages.slice(-20).reverse().map(m=>{
+    const ini=m.name?m.name.split(' ').map(word=>word[0]).join(''):'?';
+    const bot=m.author==='bot';
     const ago=timeAgo(m.ts);
     return `<div class="chat-msg"><div class="chat-avatar${bot?' bot':''}">${bot?'🤖':ini}</div>
       <div class="chat-text"><span class="chat-author">${m.name||'DUG Bot'}</span> — ${esc(m.text)} <span class="chat-time">${ago}</span></div></div>`}).join('');
