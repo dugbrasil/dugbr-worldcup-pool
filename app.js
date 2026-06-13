@@ -14,7 +14,7 @@ const FIREBASE_CONFIG = {
 };
 // Admin password stored as SHA-256 hash (original not in source)
 const ADMIN_HASH = "b2187fec904b5de878ba723ac9d25576ac0758638f290ea2642c62b389f02631";
-const LOCKOUT_H = 15/60;
+const LOCKOUT_H = 0.25; // 15 minutes before kickoff
 const BUY_IN = 75;
 const CHAMP_LOCK = new Date("2026-06-23T02:59:00Z"); // June 22 23:59 BRT
 // PIX code loaded from Firebase at runtime (not stored in source)
