@@ -192,7 +192,7 @@ const M = [
 ];
 
 // ===== STATE =====
-let db=null, currentUser=null, allBets={}, allMessages=[], matchResults={}, playerStatus={}, champions={}, matchFacts={}, matchOdds={}, prevRanks={}, resultsInitialized=false;
+let db=null, currentUser=null, allBets={}, allMessages=[], matchResults={}, playerStatus={}, champions={}, matchFacts={}, matchOdds={}, prevRanks={}, resultsInitialized=false, liveScores={}, prevLiveScores={}, liveScoresInitialized=false;
 
 // ===== CRYPTO =====
 async function sha256(str){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')}
@@ -240,6 +240,30 @@ function setupFirebaseListeners(){
   db.ref('champions').on('value',s=>{champions=s.val()||{}; if(currentUser)renderAll()});
   db.ref('matchFacts').on('value',s=>{matchFacts=s.val()||{}});
   db.ref('matchOdds').on('value',s=>{matchOdds=s.val()||{}; if(currentUser)renderAll()});
+  db.ref('liveScores').on('value',s=>{
+    const newLive=s.val()||{};
+    if(liveScoresInitialized){
+      Object.keys(newLive).forEach(mid=>{
+        const prev=prevLiveScores[mid], curr=newLive[mid];
+        if(!curr)return;
+        const match=M.find(m=>m.id===mid); if(!match)return;
+        // Detect home goal
+        if(curr.h>(prev?.h||0)){
+          const isBrazil=match.h==='BRA';
+          showGoalToast(T[match.h].f,T[match.h].n,curr.h,curr.a,T[match.a].n,curr.minute,isBrazil);
+        }
+        // Detect away goal
+        if(curr.a>(prev?.a||0)){
+          const isBrazil=match.a==='BRA';
+          showGoalToast(T[match.a].f,T[match.a].n,curr.a,curr.h,T[match.h].n,curr.minute,isBrazil);
+        }
+      });
+    }
+    prevLiveScores={...liveScores};
+    liveScores=newLive;
+    liveScoresInitialized=true;
+    if(currentUser)renderAll();
+  });
   
   // FIX: Removed .orderByChild('ts') to prevent Firebase from filtering out messages.
 // No complex sorting or filtering needed anymore!
@@ -356,10 +380,11 @@ function calcPts(bh,ba,rh,ra){
   return{p:0,t:'wrong'};
 }
 
-function getStats(pid){
+function getStats(pid,extraRes={}){
   let total=0,exact=0,gd=0,outcome=0,wrong=0,bets=0,streak=[];
+  const allRes={...matchResults,...extraRes};
   M.forEach(m=>{
-    const bet=allBets[m.id]?.[pid], res=matchResults[m.id]; if(!bet)return; bets++;
+    const bet=allBets[m.id]?.[pid], res=allRes[m.id]; if(!bet)return; bets++;
     if(res){const r=calcPts(bet.h,bet.a,res.h,res.a); if(r){total+=r.p;
       if(r.t==='exact')exact++; else if(r.t==='gd')gd++; else if(r.t==='outcome')outcome++; else wrong++; streak.push(r)}}
     else streak.push({p:-1,t:'pending'});
@@ -369,7 +394,7 @@ function getStats(pid){
 
 // ===== RENDER ALL =====
 function renderAll(){
-  [renderLeaderboard, renderMatches, renderMyBets, renderRivalries, renderAwards, renderChampBanner, renderSchedule, renderPrize, renderChat, renderBetsWarning, renderChampionWall]
+  [renderLeaderboard, renderMatches, renderMyBets, renderRivalries, renderAwards, renderChampBanner, renderSchedule, renderPrize, renderChat, renderBetsWarning, renderChampionWall, renderStandings]
   .forEach(fn=>{try{fn()}catch(e){console.error(fn.name+' error:',e)}});
 }
 
@@ -419,7 +444,7 @@ function renderBetsWarning(){
   container.innerHTML=`<div class="bets-warning${hasBrazil?' bets-warning-brazil':''}">
     <span class="bw-icon">${hasBrazil?'🇧🇷':'⏰'}</span>
     <div class="bw-text">
-      <strong>${hasBrazil?'Brazil plays today — place your bet!':'You have unbetted matches today!'}</strong>
+      <strong>${hasBrazil?'Brazil plays today, place your bet!':'You have unbetted matches today!'}</strong>
       <span>${matchNames}</span>
       <span class="bw-lock">Lockout in <strong>${timeStr}</strong></span>
     </div>
@@ -443,7 +468,9 @@ function renderPrize(){
 // ===== LEADERBOARD =====
 function renderLeaderboard(){
   const tbody=document.getElementById('lb-body');
-  const standings=PLAYERS.map(p=>({...p,...getStats(p.id),ch:champions[p.id],active:isActive(p.id)}))
+  const hasLive=Object.keys(liveScores).length>0;
+  const liveExtra=hasLive?Object.fromEntries(Object.entries(liveScores).filter(([mid])=>!matchResults[mid])):{}; 
+  const standings=PLAYERS.map(p=>({...p,...getStats(p.id,liveExtra),ch:champions[p.id],active:isActive(p.id)}))
     .sort((a,b)=>b.total-a.total||b.exact-a.exact);
   const mx=standings[0]?.total||1;
   const settled=Object.keys(matchResults).length;
@@ -454,6 +481,12 @@ function renderLeaderboard(){
   document.getElementById('lb-pool').textContent=`R$${activeCount*BUY_IN}`;
   document.getElementById('lb-exact').textContent=totalExact;
   document.getElementById('prize-pool-amount').textContent=`R$${activeCount*BUY_IN}`;
+  const liveBanner=document.getElementById('lb-live-banner');
+  if(liveBanner){
+    const liveMatches=Object.keys(liveScores).map(mid=>{const m=M.find(x=>x.id===mid);return m?`${T[m.h].f}${liveScores[mid].h}×${liveScores[mid].a}${T[m.a].f} ${liveScores[mid].minute}'`:''}).filter(Boolean).join('  ');
+    liveBanner.innerHTML=`<span class="live-dot-pulse"></span> LIVE: ${liveMatches} <span class="lb-live-note">Rankings update in real time</span>`;
+    liveBanner.style.display=hasLive?'flex':'none';
+  }
   tbody.innerHTML=standings.map((s,i)=>{
     const rk=i+1, rc=rk<=3?`rank-${rk}`:'rank-n', cf=s.ch?T[s.ch]?.f||'':'';
     const pct=mx>0?Math.round(s.total/mx*100):0;
@@ -489,6 +522,80 @@ function showToast(msg){
   const t=document.getElementById('result-toast'); if(!t)return;
   t.textContent=msg; t.classList.add('toast-visible');
   clearTimeout(t._tmr); t._tmr=setTimeout(()=>t.classList.remove('toast-visible'),5000);
+}
+
+// ===== GOAL TOAST + CONFETTI =====
+function showGoalToast(scorerFlag,scorerName,scorerGoals,oppoGoals,oppoName,minute,isBrazil){
+  const t=document.getElementById('goal-toast'); if(!t)return;
+  t.className='goal-toast'+(isBrazil?' goal-toast-brazil':'');
+  t.innerHTML=`<div class="gt-header">⚽ GOAL!</div>
+    <div class="gt-score">${scorerFlag} <strong>${scorerName} ${scorerGoals}</strong> × ${oppoGoals} ${oppoName}</div>
+    <div class="gt-minute">${minute}'</div>`;
+  t.classList.add('gt-visible');
+  launchConfetti(isBrazil);
+  clearTimeout(t._tmr); t._tmr=setTimeout(()=>t.classList.remove('gt-visible'),5000);
+}
+
+function launchConfetti(isBrazil){
+  const colors=isBrazil?['#009C3B','#FFDF00','#009C3B','#FFDF00','#fff']:['#FF9100','#F3BA6D','#fff','#FF9100'];
+  for(let i=0;i<45;i++){
+    const el=document.createElement('div');
+    el.className='confetti-p';
+    el.style.cssText=`left:${40+Math.random()*20}%;bottom:90px;background:${colors[Math.floor(Math.random()*colors.length)]};width:${4+Math.random()*5}px;height:${4+Math.random()*5}px;--tx:${(Math.random()-.5)*320}px;--ty:${-(80+Math.random()*220)}px;animation-delay:${Math.random()*.35}s;animation-duration:${.75+Math.random()*.7}s;border-radius:${Math.random()>0.5?'50%':'2px'}`;
+    document.body.appendChild(el);
+    el.addEventListener('animationend',()=>el.remove());
+  }
+}
+
+// ===== GROUP STANDINGS =====
+function computeGroupStandings(groupCode){
+  const teams=GROUPS[groupCode]; if(!teams)return[];
+  const stats={};
+  teams.forEach(code=>{stats[code]={code,gp:0,w:0,d:0,l:0,gf:0,ga:0,form:[]}});
+  M.filter(m=>m.g===groupCode).forEach(m=>{
+    const res=matchResults[m.id]||(liveScores[m.id]&&!matchResults[m.id]?liveScores[m.id]:null);
+    if(!res||!stats[m.h]||!stats[m.a])return;
+    const h=res.h,a=res.a,isL=!!liveScores[m.id]&&!matchResults[m.id];
+    stats[m.h].gp++; stats[m.a].gp++;
+    stats[m.h].gf+=h; stats[m.h].ga+=a;
+    stats[m.a].gf+=a; stats[m.a].ga+=h;
+    if(h>a){stats[m.h].w++;stats[m.a].l++;stats[m.h].form.push({r:'W',live:isL});stats[m.a].form.push({r:'L',live:isL})}
+    else if(h<a){stats[m.a].w++;stats[m.h].l++;stats[m.h].form.push({r:'L',live:isL});stats[m.a].form.push({r:'W',live:isL})}
+    else{stats[m.h].d++;stats[m.a].d++;stats[m.h].form.push({r:'D',live:isL});stats[m.a].form.push({r:'D',live:isL})}
+  });
+  return Object.values(stats).map(s=>({...s,gd:s.gf-s.ga,pts:s.w*3+s.d}))
+    .sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
+}
+
+function renderStandings(){
+  const c=document.getElementById('standings-container'); if(!c)return;
+  const hasLive=Object.keys(liveScores).length>0;
+  const groupOrder=['C','A','B','D','E','F','G','H','I','J','K','L'];
+  const liveNote=hasLive?'<div class="standings-live-note"><span class="live-dot-pulse"></span> Live match in progress. Standings update automatically.</div>':'';
+  c.innerHTML=liveNote+groupOrder.map(g=>{
+    if(!GROUPS[g])return'';
+    const rows=computeGroupStandings(g);
+    const isBrazilG=g==='C';
+    return`<div class="st-group${isBrazilG?' st-brazil-group':''}">
+      <div class="st-group-title">Group ${g}</div>
+      <table class="st-table">
+        <thead><tr><th>#</th><th class="st-team-col">Team</th><th title="Games played">GP</th><th title="Wins">W</th><th title="Draws">D</th><th title="Losses">L</th><th title="Goals for">GF</th><th title="Goals against">GA</th><th title="Goal difference">GD</th><th class="st-pts-col" title="Points">Pts</th><th title="Recent form">Form</th></tr></thead>
+        <tbody>${rows.map((s,i)=>{
+          const adv=i<2; const gd=s.gd>0?'+'+s.gd:s.gd;
+          const form=s.form.slice(-5).map(f=>`<span class="fd fd-${f.r.toLowerCase()}${f.live?' fd-live':''}">${f.r}</span>`).join('');
+          const team=T[s.code]||{f:'',n:s.code};
+          return`<tr class="${adv?'st-advance':'st-eliminate'}">
+            <td class="st-pos">${i+1}</td>
+            <td class="st-team-col">${team.f} ${team.n}</td>
+            <td>${s.gp}</td><td>${s.w}</td><td>${s.d}</td><td>${s.l}</td>
+            <td>${s.gf}</td><td>${s.ga}</td><td>${gd}</td>
+            <td class="st-pts-col"><strong>${s.pts}</strong></td>
+            <td>${form}</td></tr>`;
+        }).join('')}</tbody>
+      </table>
+      <div class="st-legend"><span class="st-advance-dot"></span>Advance to Round of 32</div>
+    </div>`;
+  }).join('');
 }
 
 // ===== CHAMPION PICKS WALL =====
@@ -561,52 +668,58 @@ function renderMatches(filter='today'){
 function renderMatchCard(m,now,showFact){
   const hm=T[m.h],aw=T[m.a],ko=new Date(m.k),lock=new Date(ko.getTime()-LOCKOUT_H*36e5),locked=now>=lock;
   const res=matchResults[m.id],bet=allBets[m.id]?.[currentUser.id],pending=!isActive(currentUser.id);
+  const liveData=liveScores[m.id],isLive=!!liveData&&!res;
   const time=ko.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Sao_Paulo'});
   const isBrazil=m.h==='BRA'||m.a==='BRA';
-  // Editable: not locked, not settled, player is active
-  const canEdit=!locked&&!res&&!pending;
+  const canEdit=!locked&&!res&&!pending&&!isLive;
   // Other bets
   const mBets=allBets[m.id]||{}; const peekHtml=Object.entries(mBets).map(([pid,b])=>{
     const pl=PLAYERS.find(p=>p.id===pid); return pl?`<span class="peek-bet"><strong>${shortName(pl)}</strong> ${b.h}×${b.a}</span>`:''}).join('');
   const bc=Object.keys(mBets).length;
   // Action button
   let actionBtn='';
-  if(res){const sc=`${res.h}×${res.a}`; let rb=''; if(bet){const pt=calcPts(bet.h,bet.a,res.h,res.a);
+  if(isLive){actionBtn=`<span class="live-badge"><span class="live-dot"></span> LIVE ${liveData.minute||''}'</span>`}
+  else if(res){const sc=`${res.h}×${res.a}`; let rb=''; if(bet){const pt=calcPts(bet.h,bet.a,res.h,res.a);
     if(pt){const lb={exact:'Exact +10',gd:'GD +5',outcome:'Outcome +3',wrong:'Wrong'};const cl={exact:'result-exact',gd:'result-gd',outcome:'result-outcome',wrong:'result-wrong'};
     rb=`<span class="match-result ${cl[pt.t]}">${lb[pt.t]}</span>`}} actionBtn=`<span style="font-size:12px;color:var(--text-muted)">Final: ${sc}</span> ${rb}`}
   else if(locked)actionBtn=`<button class="match-bet-btn locked-btn">${bet?`🔒 ${bet.h}×${bet.a}`:'🔒 Locked'}</button>`;
   else if(pending)actionBtn=`<button class="match-bet-btn locked-btn">Activate to bet</button>`;
   else if(bet)actionBtn=`<button class="match-bet-btn" data-mid="${m.id}">Update bet</button>`;
   else actionBtn=`<button class="match-bet-btn" data-mid="${m.id}">Place bet</button>`;
+  // Score area: live display vs inputs
+  const vsHtml=isLive
+    ?`<div class="match-vs"><div class="live-score-display">${liveData.h}</div><span class="score-sep">×</span><div class="live-score-display">${liveData.a}</div></div>`
+    :`<div class="match-vs">
+      <input type="number" class="score-input${!canEdit?' locked':''}" id="h-${m.id}" min="0" max="20" value="${bet?bet.h:''}" placeholder="–" ${!canEdit?'disabled':''}>
+      <span class="score-sep">×</span>
+      <input type="number" class="score-input${!canEdit?' locked':''}" id="a-${m.id}" min="0" max="20" value="${bet?bet.a:''}" placeholder="–" ${!canEdit?'disabled':''}>
+      ${canEdit?`<button class="horoscope-btn" data-mid="${m.id}" title="Random prediction">🔮</button>`:''}
+    </div>`;
   // Match fact from Firebase
   const fact=showFact&&matchFacts[m.id]?`<div class="match-fact"><span>🤖</span> ${esc(matchFacts[m.id])}</div>`:'';
   // Odds from Firebase
   const od=matchOdds[m.id];
-  const oddsHtml=od?`<div class="match-odds">
+  const oddsHtml=od&&!isLive?`<div class="match-odds">
     <span class="mo-h">${hm.f} <strong>${od.home}%</strong></span>
     <span class="mo-d">Tie <strong>${od.draw}%</strong></span>
     <span class="mo-a"><strong>${od.away}%</strong> ${aw.f}</span>
     <span class="mo-src">· ${od.source||'Bookmaker avg'}</span>
   </div>`:'';
-  // Countdown to lockout (only when unbetted and not locked)
-  const countdownHtml=!locked&&!bet&&!res&&!pending&&(lock-now)>0
+  // Countdown to lockout
+  const countdownHtml=!locked&&!bet&&!res&&!pending&&!isLive&&(lock-now)>0
     ?`<span class="match-countdown" data-locktime="${lock.getTime()}">🔒 ${formatCountdown(lock-now)}</span>`:'';
-  // Horoscope button (only if editable and no bet yet)
-  const horoscope=canEdit?`<button class="horoscope-btn" data-mid="${m.id}" title="Random prediction">🔮</button>`:'';
-  const dis=!canEdit?'disabled':'';
-  return `<div class="match-card${isBrazil?' brazil-match':''}">
+  // Time display
+  const timeDisplay=isLive
+    ?`<span class="live-badge-inline"><span class="live-dot"></span> LIVE</span>`
+    :`<span class="match-info">🕐 ${time} BRT</span>`;
+  return `<div class="match-card${isBrazil?' brazil-match':''}${isLive?' live-match':''}">
     ${fact}
     <div class="match-teams-row"><div class="match-team"><span class="flag">${hm.f}</span> ${hm.n}</div>
-    <div class="match-vs">
-      <input type="number" class="score-input${!canEdit?' locked':''}" id="h-${m.id}" min="0" max="20" value="${bet?bet.h:''}" placeholder="–" ${dis}>
-      <span class="score-sep">×</span>
-      <input type="number" class="score-input${!canEdit?' locked':''}" id="a-${m.id}" min="0" max="20" value="${bet?bet.a:''}" placeholder="–" ${dis}>
-      ${horoscope}
-    </div>
+    ${vsHtml}
     <div class="match-team right">${aw.n} <span class="flag">${aw.f}</span></div></div>
     <div class="match-meta"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-    ${m.g?`<span class="match-group">Group ${m.g}</span>`:m.r?`<span class="match-group">${m.r}</span>`:''}<span class="match-info">🕐 ${time} BRT</span>
-    <span class="match-info">📍 ${m.v}</span>${countdownHtml}</div>${actionBtn}</div>
+    ${m.g?`<span class="match-group">Group ${m.g}</span>`:m.r?`<span class="match-group">${m.r}</span>`:''}${timeDisplay}
+    ${!isLive?`<span class="match-info">📍 ${m.v}</span>`:''}${countdownHtml}</div>${actionBtn}</div>
     ${oddsHtml}
     ${bc>0?`<div class="bets-peek">${renderBetDist(mBets,hm,aw)}<div class="bets-peek-label">${bc} of ${PLAYERS.length} bets</div><div class="peek-row">${peekHtml}</div></div>`:''}</div>`;
 }
@@ -752,12 +865,14 @@ function renderSchedule(){
   const byDate={}; groupMatches.forEach(m=>{const d=new Date(m.k).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); if(!byDate[d])byDate[d]=[];byDate[d].push(m)});
   fs.innerHTML=Object.entries(byDate).map(([d,ms])=>`<div class="day-label">${d}</div>${ms.map(m=>{
     const ko=new Date(m.k),res=matchResults[m.id],past=ko<now,today=matchDateBRT(m)===todayStr,isBr=m.h==='BRA'||m.a==='BRA';
+    const live=liveScores[m.id]&&!res;
     const time=ko.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Sao_Paulo'});
     const od=matchOdds[m.id];
-    const odInline=od?`<span class="sched-odds">${T[m.h].f}${od.home}% · ${od.draw}% · ${od.away}%${T[m.a].f}</span>`:'';
-    return `<div class="schedule-match${past?' past':''}${today?' today':''}${isBr?' brazil-match':''}">
+    const odInline=od&&!res&&!live?`<span class="sched-odds">${T[m.h].f}${od.home}% · ${od.draw}% · ${od.away}%${T[m.a].f}</span>`:'';
+    const scoreInline=res?`<span class="sched-score">${res.h}×${res.a}</span>`:live?`<span class="sched-score sched-live"><span class="live-dot"></span>${liveScores[m.id].h}×${liveScores[m.id].a} ${liveScores[m.id].minute||''}'</span>`:'';
+    return `<div class="schedule-match${past&&!live?' past':''}${today?' today':''}${isBr?' brazil-match':''}${live?' live-match':''}">
       <span class="sched-teams">${T[m.h].f} ${T[m.h].n} vs ${T[m.a].n} ${T[m.a].f}</span>
-      <span class="sched-meta">Group ${m.g} · ${time} BRT · ${m.v}${res?`<span class="sched-score">${res.h}×${res.a}</span>`:''}${odInline}</span></div>`}).join('')}`).join('');
+      <span class="sched-meta">Group ${m.g} · ${live?`<span class="live-badge-inline"><span class="live-dot"></span>LIVE</span>`:time+' BRT'} · ${m.v}${scoreInline}${odInline}</span></div>`}).join('')}`).join('');
   // Knockout
   const kb=document.getElementById('knockout-bracket');
   if(kb){const rounds={R32:'Round of 32',R16:'Round of 16',QF:'Quarter-finals',SF:'Semi-finals','3rd':'3rd Place Match',Final:'Final'};
@@ -807,7 +922,7 @@ function renderChat(){
     const ago=m.ts?timeAgo(m.ts):'';
     const text=m.text||'';
     return `<div class="chat-msg"><div class="chat-avatar${bot?' bot':''}">${bot?'🤖':ini}</div>
-      <div class="chat-text"><span class="chat-author">${esc(name)}</span> — ${esc(text)} <span class="chat-time">${ago}</span></div></div>`}).join('');
+      <div class="chat-text"><span class="chat-author">${esc(name)}</span> · ${esc(text)} <span class="chat-time">${ago}</span></div></div>`}).join('');
 }
 function timeAgo(ts){const d=Date.now()-ts,m=Math.floor(d/6e4); if(m<1)return'now'; if(m<60)return m+'m'; const h=Math.floor(m/60); if(h<24)return h+'h'; return Math.floor(h/24)+'d'}
 function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
