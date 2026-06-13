@@ -529,7 +529,7 @@ function renderMatchCard(m,now,showFact){
   const od=matchOdds[m.id];
   const oddsHtml=od?`<div class="match-odds">
     <span class="mo-h">${hm.f} <strong>${od.home}%</strong></span>
-    <span class="mo-d">Draw <strong>${od.draw}%</strong></span>
+    <span class="mo-d">Tie <strong>${od.draw}%</strong></span>
     <span class="mo-a"><strong>${od.away}%</strong> ${aw.f}</span>
     <span class="mo-src">· ${od.source||'Bookmaker avg'}</span>
   </div>`:'';
