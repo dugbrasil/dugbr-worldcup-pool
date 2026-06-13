@@ -1,4 +1,4 @@
-/* DUGbr WORLD CUP 2026 POOL - v3 */
+/* DUG WORLD CUP 2026 POOL - v3 */
 
 // ===== CONFIG =====
 // NOTE: Firebase API keys are designed to be public (per Google's docs).
@@ -38,6 +38,14 @@ const PLAYERS = [
   {id:"p13",name:"Valter Marques"},
   {id:"p14",name:"Wilson Duarte"}
 ];
+// Short name helper: appends last-name initial when first name is shared (e.g. CarlosB, CarlosS)
+const SHORT_NAMES={};
+PLAYERS.forEach(p=>{
+  const first=p.name.split(' ')[0];
+  const dups=PLAYERS.filter(x=>x.name.split(' ')[0]===first);
+  SHORT_NAMES[p.id]=dups.length>1?first+p.name.split(' ').slice(-1)[0][0]:first;
+});
+function shortName(p){return SHORT_NAMES[p.id]||p.name.split(' ')[0]}
 
 // ===== TEAMS (48) =====
 const T={
@@ -487,7 +495,7 @@ function showToast(msg){
 function renderChampionWall(){
   const c=document.getElementById('champion-wall'); if(!c)return;
   const picks={};
-  PLAYERS.forEach(p=>{const ch=champions[p.id]; if(!ch||!T[ch])return; if(!picks[ch])picks[ch]=[]; picks[ch].push(p.name.split(' ')[0])});
+  PLAYERS.forEach(p=>{const ch=champions[p.id]; if(!ch||!T[ch])return; if(!picks[ch])picks[ch]=[]; picks[ch].push(shortName(p))});
   const sorted=Object.entries(picks).sort((a,b)=>b[1].length-a[1].length);
   if(!sorted.length){c.innerHTML='';return;}
   c.innerHTML=`<div class="champ-wall">${sorted.map(([code,names])=>{
@@ -511,9 +519,9 @@ function renderRivalries(){
   const st=PLAYERS.filter(p=>isActive(p.id)).map(p=>({...p,...getStats(p.id)})).sort((a,b)=>b.total-a.total);
   const pairs=[]; for(let i=0;i<st.length-1;i+=2)pairs.push([st[i],st[i+1]]);
   c.innerHTML=pairs.slice(0,4).map(([a,b])=>{const tot=(a.total+b.total)||1; const pct=Math.round(a.total/tot*100);
-    return `<div class="rivalry-card"><span class="rival-name">${a.name.split(' ')[0]}</span><span class="rival-pts rival-pts-l">${a.total}</span>
+    return `<div class="rivalry-card"><span class="rival-name">${shortName(a)}</span><span class="rival-pts rival-pts-l">${a.total}</span>
     <div class="rival-bar"><div class="rival-bar-l" style="width:${pct}%"></div><div class="rival-bar-r" style="width:${100-pct}%"></div></div>
-    <span class="rival-pts rival-pts-r">${b.total}</span><span class="rival-name">${b.name.split(' ')[0]}</span></div>`}).join('');
+    <span class="rival-pts rival-pts-r">${b.total}</span><span class="rival-name">${shortName(b)}</span></div>`}).join('');
 }
 
 // ===== CHAMPION BANNER =====
@@ -559,7 +567,7 @@ function renderMatchCard(m,now,showFact){
   const canEdit=!locked&&!res&&!pending;
   // Other bets
   const mBets=allBets[m.id]||{}; const peekHtml=Object.entries(mBets).map(([pid,b])=>{
-    const pl=PLAYERS.find(p=>p.id===pid); return pl?`<span class="peek-bet"><strong>${pl.name.split(' ')[0]}</strong> ${b.h}×${b.a}</span>`:''}).join('');
+    const pl=PLAYERS.find(p=>p.id===pid); return pl?`<span class="peek-bet"><strong>${shortName(pl)}</strong> ${b.h}×${b.a}</span>`:''}).join('');
   const bc=Object.keys(mBets).length;
   // Action button
   let actionBtn='';
