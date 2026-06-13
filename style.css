@@ -392,3 +392,14 @@ select:focus, input:focus { outline: none; border-color: var(--dug-orange); box-
 
 /* === NAV BADGE === */
 .nav-badge { background:#E53935; color:#fff; font-size:10px; font-weight:600; padding:1px 5px; border-radius:99px; margin-left:4px; vertical-align:middle; }
+
+/* === MATCH ODDS PANEL === */
+.match-odds { display:flex; align-items:center; gap:8px; padding:6px 14px; background:var(--bg); border-top:1px solid var(--border); font-size:12px; flex-wrap:wrap; }
+.mo-h { color:var(--dug-orange); }
+.mo-d { color:var(--text-muted); }
+.mo-a { color:var(--blue); }
+.mo-h strong, .mo-d strong, .mo-a strong { font-weight:600; }
+.mo-src { color:var(--text-light); font-size:11px; margin-left:auto; }
+
+/* === SCHEDULE ODDS INLINE === */
+.sched-odds { font-size:11px; color:var(--text-muted); margin-left:8px; }
