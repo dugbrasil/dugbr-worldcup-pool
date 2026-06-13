@@ -184,7 +184,7 @@ const M = [
 ];
 
 // ===== STATE =====
-let db=null, currentUser=null, allBets={}, allMessages=[], matchResults={}, playerStatus={}, champions={}, matchFacts={};
+let db=null, currentUser=null, allBets={}, allMessages=[], matchResults={}, playerStatus={}, champions={}, matchFacts={}, matchOdds={};
 
 // ===== CRYPTO =====
 async function sha256(str){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')}
@@ -219,6 +219,7 @@ function setupFirebaseListeners(){
   db.ref('playerStatus').on('value',s=>{playerStatus=s.val()||{}; if(currentUser)updatePendingState()});
   db.ref('champions').on('value',s=>{champions=s.val()||{}; if(currentUser)renderAll()});
   db.ref('matchFacts').on('value',s=>{matchFacts=s.val()||{}});
+  db.ref('matchOdds').on('value',s=>{matchOdds=s.val()||{}; if(currentUser)renderAll()});
   
   // FIX: Removed .orderByChild('ts') to prevent Firebase from filtering out messages.
 // No complex sorting or filtering needed anymore!
@@ -522,8 +523,16 @@ function renderMatchCard(m,now,showFact){
   else if(pending)actionBtn=`<button class="match-bet-btn locked-btn">Activate to bet</button>`;
   else if(bet)actionBtn=`<button class="match-bet-btn" data-mid="${m.id}">Update bet</button>`;
   else actionBtn=`<button class="match-bet-btn" data-mid="${m.id}">Place bet</button>`;
-  // Match fact from Firebase (only in Today view)
+  // Match fact from Firebase
   const fact=showFact&&matchFacts[m.id]?`<div class="match-fact"><span>🤖</span> ${esc(matchFacts[m.id])}</div>`:'';
+  // Odds from Firebase
+  const od=matchOdds[m.id];
+  const oddsHtml=od?`<div class="match-odds">
+    <span class="mo-h">${hm.f} <strong>${od.home}%</strong></span>
+    <span class="mo-d">Draw <strong>${od.draw}%</strong></span>
+    <span class="mo-a"><strong>${od.away}%</strong> ${aw.f}</span>
+    <span class="mo-src">· ${od.source||'Bookmaker avg'}</span>
+  </div>`:'';
   // Horoscope button (only if editable and no bet yet)
   const horoscope=canEdit?`<button class="horoscope-btn" data-mid="${m.id}" title="Random prediction">🔮</button>`:'';
   const dis=!canEdit?'disabled':'';
@@ -540,6 +549,7 @@ function renderMatchCard(m,now,showFact){
     <div class="match-meta"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
     ${m.g?`<span class="match-group">Group ${m.g}</span>`:m.r?`<span class="match-group">${m.r}</span>`:''}<span class="match-info">🕐 ${time} BRT</span>
     <span class="match-info">📍 ${m.v}</span></div>${actionBtn}</div>
+    ${oddsHtml}
     ${bc>0?`<div class="bets-peek"><div class="bets-peek-label">${bc} of ${PLAYERS.length} bets</div><div class="peek-row">${peekHtml}</div></div>`:''}</div>`;
 }
 
@@ -665,9 +675,11 @@ function renderSchedule(){
   fs.innerHTML=Object.entries(byDate).map(([d,ms])=>`<div class="day-label">${d}</div>${ms.map(m=>{
     const ko=new Date(m.k),res=matchResults[m.id],past=ko<now,today=matchDateBRT(m)===todayStr,isBr=m.h==='BRA'||m.a==='BRA';
     const time=ko.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Sao_Paulo'});
+    const od=matchOdds[m.id];
+    const odInline=od?`<span class="sched-odds">${T[m.h].f}${od.home}% · ${od.draw}% · ${od.away}%${T[m.a].f}</span>`:'';
     return `<div class="schedule-match${past?' past':''}${today?' today':''}${isBr?' brazil-match':''}">
       <span class="sched-teams">${T[m.h].f} ${T[m.h].n} vs ${T[m.a].n} ${T[m.a].f}</span>
-      <span class="sched-meta">Group ${m.g} · ${time} BRT · ${m.v}${res?`<span class="sched-score">${res.h}×${res.a}</span>`:''}</span></div>`}).join('')}`).join('');
+      <span class="sched-meta">Group ${m.g} · ${time} BRT · ${m.v}${res?`<span class="sched-score">${res.h}×${res.a}</span>`:''}${odInline}</span></div>`}).join('')}`).join('');
   // Knockout
   const kb=document.getElementById('knockout-bracket');
   if(kb){const rounds={R32:'Round of 32',R16:'Round of 16',QF:'Quarter-finals',SF:'Semi-finals','3rd':'3rd Place Match',Final:'Final'};
