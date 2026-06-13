@@ -488,7 +488,7 @@ function renderMatches(filter='today'){
   else if(filter==='completed')filtered=filtered.filter(m=>matchResults[m.id]);
   if(filtered.length===0){c.innerHTML='<div class="empty-state"><div>⚽</div>No matches for this filter</div>';return}
   const byDate={};filtered.forEach(m=>{const d=new Date(m.k).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'America/Sao_Paulo'}); if(!byDate[d])byDate[d]=[];byDate[d].push(m)});
-  let html=''; Object.entries(byDate).forEach(([d,ms])=>{html+=`<div class="day-label">📅 ${d}</div>`; ms.forEach(m=>html+=renderMatchCard(m,now,isToday))});
+  let html=''; Object.entries(byDate).forEach(([d,ms])=>{html+=`<div class="day-label">📅 ${d}</div>`; ms.forEach(m=>html+=renderMatchCard(m,now,true))});
   // Save all floating button (only show if there are unsaved editable matches)
   const hasEditable=filtered.some(m=>{const ko=new Date(m.k),lock=new Date(ko.getTime()-LOCKOUT_H*36e5); return now<lock&&!matchResults[m.id]&&isActive(currentUser.id)});
   if(hasEditable)html+=`<div class="save-all-bar"><button class="btn-save-all" id="btn-save-all">💾 Save all bets</button></div>`;
