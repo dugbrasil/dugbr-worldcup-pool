@@ -11,13 +11,73 @@
 
 <header id="app-header" style="display:none">
   <div class="header-top">
-    <div class="logo-area"><div class="logo">DUG Brasil</div><div class="logo-sub">World Cup 2026 Pool</div></div>
+    <div class="logo-area"><div class="logo"><span class="logo-dug">DUG </span><span class="logo-bra">Bra</span><span class="logo-sil">sil</span></div><div class="logo-sub">World Cup 2026 Pool</div></div>
     <div class="user-area" id="user-area"></div>
   </div>
   <div class="seismic-wave"><svg viewBox="0 0 1200 32" preserveAspectRatio="none">
     <path d="M0,20Q25,8 50,20T100,20T150,20T200,20T250,20T300,20T350,20T400,20T450,20T500,20T550,20T600,20T650,20T700,20T750,20T800,20T850,20T900,20T950,20T1000,20T1050,20T1100,20T1150,20T1200,20" fill="none" stroke="#FF9100" stroke-width="1.5" opacity=".5"/>
     <path d="M0,16Q30,4 60,16T120,16T180,16T240,16T300,16T360,16T420,16T480,16T540,16T600,16T660,16T720,16T780,16T840,16T900,16T960,16T1020,16T1080,16T1140,16T1200,16" fill="none" stroke="#F3BA6D" stroke-width="1" opacity=".4"/>
-  </svg></div>
+  </svg>
+  <div class="wave-ball-outer">
+    <svg class="wave-ball-inner" width="34" height="34" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="wb_base" cx="34%" cy="28%" r="72%">
+          <stop offset="0%" stop-color="#fff"/>
+          <stop offset="18%" stop-color="#f8f8f8"/>
+          <stop offset="52%" stop-color="#e2e2e2"/>
+          <stop offset="82%" stop-color="#aaa"/>
+          <stop offset="100%" stop-color="#555"/>
+        </radialGradient>
+        <radialGradient id="wb_vig" cx="50%" cy="50%" r="50%">
+          <stop offset="42%" stop-color="#000" stop-opacity="0"/>
+          <stop offset="78%" stop-color="#000" stop-opacity="0.28"/>
+          <stop offset="100%" stop-color="#000" stop-opacity="0.65"/>
+        </radialGradient>
+        <radialGradient id="wb_red" cx="38%" cy="32%" r="65%">
+          <stop offset="0%" stop-color="#FF5533"/>
+          <stop offset="45%" stop-color="#DD1100"/>
+          <stop offset="100%" stop-color="#880000"/>
+        </radialGradient>
+        <radialGradient id="wb_blu" cx="65%" cy="48%" r="55%">
+          <stop offset="0%" stop-color="#5577FF"/>
+          <stop offset="50%" stop-color="#1133CC"/>
+          <stop offset="100%" stop-color="#050E66"/>
+        </radialGradient>
+        <radialGradient id="wb_grn" cx="35%" cy="68%" r="58%">
+          <stop offset="0%" stop-color="#44EE66"/>
+          <stop offset="50%" stop-color="#0A9A30"/>
+          <stop offset="100%" stop-color="#045018"/>
+        </radialGradient>
+        <clipPath id="wb_cl"><circle cx="50" cy="50" r="47"/></clipPath>
+      </defs>
+      <circle cx="50" cy="50" r="47" fill="url(#wb_base)"/>
+      <g clip-path="url(#wb_cl)">
+        <path d="M50,3 C58,3 69,7 78,14 C86,21 90,31 88,42 C86,52 79,59 71,63 C64,66 57,64 52,58 C48,53 47,46 50,40 C52,35 55,31 54,25 C52,19 46,13 43,9 C45,5 47,3 50,3Z" fill="url(#wb_red)"/>
+        <path d="M74,18 C80,26 81,37 76,47 C72,55 65,61 58,62" fill="none" stroke="#FF8866" stroke-width="1.2" opacity="0.55"/>
+        <path d="M70,13 C77,22 79,34 73,45 C69,53 62,59 55,60" fill="none" stroke="#FF7755" stroke-width="1" opacity="0.45"/>
+        <path d="M65,9 C73,18 76,31 70,43 C66,51 59,57 52,58" fill="none" stroke="#FF6644" stroke-width="0.9" opacity="0.4"/>
+        <path d="M57,32 L53,40" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+        <path d="M61,30 L57,38" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+        <path d="M65,29 L61,37" stroke="white" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+        <path d="M88,42 C95,55 92,72 82,82 C74,90 62,95 50,96 C46,86 50,74 57,65 C62,58 67,51 69,44 C71,38 70,31 68,25 C72,22 78,26 82,32 C85,35 87,38 88,42Z" fill="url(#wb_blu)"/>
+        <path d="M90,54 C89,64 84,73 76,80 C70,85 62,89 54,90" fill="none" stroke="#6688FF" stroke-width="1.2" opacity="0.5"/>
+        <path d="M92,60 C91,70 86,79 77,85 C71,89 63,92 55,93" fill="none" stroke="#4466EE" stroke-width="1" opacity="0.4"/>
+        <path d="M43,9 C35,8 24,12 16,20 C8,28 4,40 5,52 C6,64 13,75 23,82 C32,88 44,92 55,92 C53,82 48,72 42,64 C37,57 33,49 32,41 C31,33 34,25 39,20 C40,16 41,12 43,9Z" fill="url(#wb_grn)"/>
+        <path d="M10,50 C12,62 19,72 30,78 C39,83 50,86 58,85" fill="none" stroke="#55FF77" stroke-width="1.2" opacity="0.5"/>
+        <path d="M7,42 C9,56 17,68 29,74 C38,79 50,82 58,81" fill="none" stroke="#33EE55" stroke-width="1" opacity="0.4"/>
+        <path d="M50,3 C47,9 44,15 43,22 C42,29 43,36 46,41" fill="none" stroke="white" stroke-width="3" opacity="0.75"/>
+        <path d="M46,41 C48,47 51,52 56,56 C61,59 66,60 70,57" fill="none" stroke="white" stroke-width="3" opacity="0.75"/>
+        <path d="M68,25 C72,28 74,34 73,40 C72,46 69,51 65,55" fill="none" stroke="white" stroke-width="2.5" opacity="0.7"/>
+        <path d="M39,20 C34,26 32,34 33,42" fill="none" stroke="white" stroke-width="2.5" opacity="0.65"/>
+      </g>
+      <circle cx="50" cy="50" r="47" fill="url(#wb_vig)"/>
+      <circle cx="50" cy="50" r="47" fill="none" stroke="#555" stroke-width="0.8"/>
+      <ellipse cx="29" cy="24" rx="13" ry="9" fill="white" opacity="0.72" transform="rotate(-30,29,24)"/>
+      <ellipse cx="24" cy="19" rx="5.5" ry="3.5" fill="white" opacity="0.92" transform="rotate(-30,24,19)"/>
+      <circle cx="21" cy="16" r="2.5" fill="white" opacity="0.95"/>
+    </svg>
+  </div>
+  </div>
   <nav id="main-nav">
     <button class="nav-btn active" data-tab="leaderboard">🏆 Leaderboard</button>
     <button class="nav-btn" data-tab="matches">⚽ Matches</button>
@@ -31,7 +91,7 @@
 <!-- ========== LOGIN SCREEN ========== -->
 <div id="login-screen" class="screen">
   <div class="login-card">
-    <div class="login-logo">DUG Brasil</div>
+    <div class="login-logo"><span class="logo-dug">DUG </span><span class="logo-bra">Bra</span><span class="logo-sil">sil</span></div>
     <div class="login-sub">World Cup 2026 Pool</div>
     <div class="login-wave"><svg viewBox="0 0 400 40" preserveAspectRatio="none"><path d="M0,20Q25,8 50,20T100,20T150,20T200,20T250,20T300,20T350,20T400,20" fill="none" stroke="#FF9100" stroke-width="2" opacity=".4"/></svg></div>
 
