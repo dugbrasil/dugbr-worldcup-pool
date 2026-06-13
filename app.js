@@ -1,4 +1,4 @@
-/* DUG WORLD CUP 2026 POOL - v3 */
+/* DUGbr WORLD CUP 2026 POOL - v3 */
 
 // ===== CONFIG =====
 // NOTE: Firebase API keys are designed to be public (per Google's docs).
@@ -184,7 +184,7 @@ const M = [
 ];
 
 // ===== STATE =====
-let db=null, currentUser=null, allBets={}, allMessages=[], matchResults={}, playerStatus={}, champions={}, matchFacts={}, matchOdds={};
+let db=null, currentUser=null, allBets={}, allMessages=[], matchResults={}, playerStatus={}, champions={}, matchFacts={}, matchOdds={}, prevRanks={}, resultsInitialized=false;
 
 // ===== CRYPTO =====
 async function sha256(str){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')}
@@ -203,7 +203,7 @@ function initApp(){
     setupPIXButtons();
   }
   setupLogin(); setupNav(); setupFilters(); setupAdmin(); setupChat();
-  setInterval(()=>{if(currentUser)renderBetsWarning()}, 60000);
+  setInterval(()=>{if(currentUser){renderBetsWarning(); updateCountdowns();}}, 30000);
 }
 
 // ===== LOCAL STORAGE =====
@@ -215,7 +215,19 @@ function saveLS(){lsS('bets',allBets); lsS('msgs',allMessages); lsS('res',matchR
 // ===== FIREBASE =====
 function setupFirebaseListeners(){
   db.ref('bets').on('value',s=>{allBets=s.val()||{}; if(currentUser)renderAll()});
-  db.ref('results').on('value',s=>{matchResults=s.val()||{}; if(currentUser)renderAll()});
+  db.ref('results').on('value',s=>{
+    const newRes=s.val()||{};
+    if(resultsInitialized){
+      Object.keys(newRes).forEach(mid=>{
+        if(!matchResults[mid]){
+          const match=M.find(m=>m.id===mid);
+          if(match) showToast(`⚽ Result: ${T[match.h].f} ${T[match.h].n} ${newRes[mid].h} × ${newRes[mid].a} ${T[match.a].n} ${T[match.a].f}`);
+        }
+      });
+    }
+    matchResults=newRes; resultsInitialized=true;
+    if(currentUser)renderAll();
+  });
   db.ref('playerStatus').on('value',s=>{playerStatus=s.val()||{}; if(currentUser)updatePendingState()});
   db.ref('champions').on('value',s=>{champions=s.val()||{}; if(currentUser)renderAll()});
   db.ref('matchFacts').on('value',s=>{matchFacts=s.val()||{}});
@@ -349,7 +361,7 @@ function getStats(pid){
 
 // ===== RENDER ALL =====
 function renderAll(){
-  [renderLeaderboard, renderMatches, renderMyBets, renderRivalries, renderAwards, renderChampBanner, renderSchedule, renderPrize, renderChat, renderBetsWarning]
+  [renderLeaderboard, renderMatches, renderMyBets, renderRivalries, renderAwards, renderChampBanner, renderSchedule, renderPrize, renderChat, renderBetsWarning, renderChampionWall]
   .forEach(fn=>{try{fn()}catch(e){console.error(fn.name+' error:',e)}});
 }
 
@@ -439,14 +451,49 @@ function renderLeaderboard(){
     const pct=mx>0?Math.round(s.total/mx*100):0;
     const badges=getStreakBadge(s);
     const st=s.active?'':`<span class="admin-player-status status-pending" style="font-size:10px;margin-left:4px">pending</span>`;
-    return `<tr${!s.active?' style="opacity:.5"':''}>
+    const change=prevRanks[s.id]!==undefined?prevRanks[s.id]-rk:null;
+    const changeHtml=change===null?'':change>0?`<span class="rank-up">↑${change}</span>`:change<0?`<span class="rank-dn">↓${Math.abs(change)}</span>`:'';
+    const crown=rk===1?'👑 ':'';
+    const rowClass=rk<=3?` class="lb-row-${rk}"`:'';
+    return `<tr${!s.active?' style="opacity:.5"':''}${rowClass}>
       <td><span class="rank-badge ${rc}">${rk}</span></td>
-      <td><span class="player-name">${s.name}</span>${badges}${st} <span class="player-champion">${cf}</span></td>
+      <td><span class="player-name">${crown}${s.name}</span>${changeHtml}${badges}${st} <span class="player-champion">${cf}</span></td>
       <td class="col-num">${s.exact}</td><td class="col-num">${s.gd}</td><td class="col-num">${s.outcome}</td>
       <td class="pts-cell">${s.total} <span class="pts-bar"><span class="pts-bar-fill" style="width:${pct}%"></span></span></td></tr>`}).join('');
+  standings.forEach((s,i)=>{prevRanks[s.id]=i+1;});
 }
 
 function getStreakBadge(s){let c=0; for(let i=s.streak.length-1;i>=0;i--){if(s.streak[i].t!=='wrong'&&s.streak[i].t!=='pending')c++;else break} return c>=3?'🔥':''}
+
+// ===== COUNTDOWN =====
+function formatCountdown(ms){const h=Math.floor(ms/3600000),min=Math.floor((ms%3600000)/60000); return h>0?`${h}h ${min}min to lock`:`${min}min to lock`}
+function updateCountdowns(){
+  const now=new Date();
+  document.querySelectorAll('[data-locktime]').forEach(el=>{
+    const lock=new Date(+el.dataset.locktime), ms=lock-now;
+    if(ms<=0){el.textContent='🔒 Locked'; el.removeAttribute('data-locktime')}
+    else el.textContent='🔒 '+formatCountdown(ms);
+  });
+}
+
+// ===== TOAST =====
+function showToast(msg){
+  const t=document.getElementById('result-toast'); if(!t)return;
+  t.textContent=msg; t.classList.add('toast-visible');
+  clearTimeout(t._tmr); t._tmr=setTimeout(()=>t.classList.remove('toast-visible'),5000);
+}
+
+// ===== CHAMPION PICKS WALL =====
+function renderChampionWall(){
+  const c=document.getElementById('champion-wall'); if(!c)return;
+  const picks={};
+  PLAYERS.forEach(p=>{const ch=champions[p.id]; if(!ch||!T[ch])return; if(!picks[ch])picks[ch]=[]; picks[ch].push(p.name.split(' ')[0])});
+  const sorted=Object.entries(picks).sort((a,b)=>b[1].length-a[1].length);
+  if(!sorted.length){c.innerHTML='';return;}
+  c.innerHTML=`<div class="champ-wall">${sorted.map(([code,names])=>{
+    const t=T[code]; return `<div class="cw-item"><span class="cw-flag">${t.f}</span><span class="cw-team">${t.n}</span><span class="cw-count">×${names.length}</span><span class="cw-names">${names.join(', ')}</span></div>`;
+  }).join('')}</div>`;
+}
 
 // ===== AWARDS =====
 function renderAwards(){
@@ -533,6 +580,9 @@ function renderMatchCard(m,now,showFact){
     <span class="mo-a"><strong>${od.away}%</strong> ${aw.f}</span>
     <span class="mo-src">· ${od.source||'Bookmaker avg'}</span>
   </div>`:'';
+  // Countdown to lockout (only when unbetted and not locked)
+  const countdownHtml=!locked&&!bet&&!res&&!pending&&(lock-now)>0
+    ?`<span class="match-countdown" data-locktime="${lock.getTime()}">🔒 ${formatCountdown(lock-now)}</span>`:'';
   // Horoscope button (only if editable and no bet yet)
   const horoscope=canEdit?`<button class="horoscope-btn" data-mid="${m.id}" title="Random prediction">🔮</button>`:'';
   const dis=!canEdit?'disabled':'';
@@ -548,9 +598,29 @@ function renderMatchCard(m,now,showFact){
     <div class="match-team right">${aw.n} <span class="flag">${aw.f}</span></div></div>
     <div class="match-meta"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
     ${m.g?`<span class="match-group">Group ${m.g}</span>`:m.r?`<span class="match-group">${m.r}</span>`:''}<span class="match-info">🕐 ${time} BRT</span>
-    <span class="match-info">📍 ${m.v}</span></div>${actionBtn}</div>
+    <span class="match-info">📍 ${m.v}</span>${countdownHtml}</div>${actionBtn}</div>
     ${oddsHtml}
-    ${bc>0?`<div class="bets-peek"><div class="bets-peek-label">${bc} of ${PLAYERS.length} bets</div><div class="peek-row">${peekHtml}</div></div>`:''}</div>`;
+    ${bc>0?`<div class="bets-peek">${renderBetDist(mBets,hm,aw)}<div class="bets-peek-label">${bc} of ${PLAYERS.length} bets</div><div class="peek-row">${peekHtml}</div></div>`:''}</div>`;
+}
+
+// ===== BET DISTRIBUTION BAR =====
+function renderBetDist(mBets,hm,aw){
+  let h=0,t=0,a=0;
+  Object.values(mBets).forEach(b=>{const d=b.h-b.a; if(d>0)h++;else if(d<0)a++;else t++;});
+  const total=h+t+a; if(!total)return '';
+  const hp=Math.round(h/total*100),tp=Math.round(t/total*100),ap=100-hp-tp;
+  return `<div class="bet-dist">
+    <div class="bd-bar">
+      ${h?`<div class="bd-home" style="width:${hp}%" title="${hm.n} win"></div>`:''}
+      ${t?`<div class="bd-tie" style="width:${tp}%" title="Tie"></div>`:''}
+      ${a?`<div class="bd-away" style="width:${ap}%" title="${aw.n} win"></div>`:''}
+    </div>
+    <div class="bd-labels">
+      <span class="bd-lh">${hm.f} ${h}</span>
+      <span class="bd-lt">Tie ${t}</span>
+      <span class="bd-la">${a} ${aw.f}</span>
+    </div>
+  </div>`;
 }
 
 function placeBet(mid){
