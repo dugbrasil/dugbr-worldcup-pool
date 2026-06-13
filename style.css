@@ -39,7 +39,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .user-area .champion-flag { font-size: 16px; }
 
 .seismic-wave { height: 28px; overflow: visible; position: relative; }
-.seismic-wave svg { position: absolute; bottom: 0; width: 200%; height: 28px; animation: waveSlide 8s linear infinite; }
+.seismic-wave > svg { position: absolute; bottom: 0; width: 200%; height: 28px; animation: waveSlide 8s linear infinite; }
 .wave-ball-outer { position: absolute; left: 48%; bottom: 4px; animation: waveBallBob 0.9s ease-in-out infinite; filter: drop-shadow(0 5px 6px rgba(0,0,0,.7)); }
 .wave-ball-inner { display: block; animation: waveBallSpin 2s linear infinite; }
 @keyframes waveBallBob { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-13px)} }
