@@ -203,6 +203,7 @@ function initApp(){
     setupPIXButtons();
   }
   setupLogin(); setupNav(); setupFilters(); setupAdmin(); setupChat();
+  setInterval(()=>{if(currentUser)renderBetsWarning()}, 60000);
 }
 
 // ===== LOCAL STORAGE =====
@@ -347,11 +348,63 @@ function getStats(pid){
 
 // ===== RENDER ALL =====
 function renderAll(){
-  [renderLeaderboard, renderMatches, renderMyBets, renderRivalries, renderAwards, renderChampBanner, renderSchedule, renderPrize, renderChat]
+  [renderLeaderboard, renderMatches, renderMyBets, renderRivalries, renderAwards, renderChampBanner, renderSchedule, renderPrize, renderChat, renderBetsWarning]
   .forEach(fn=>{try{fn()}catch(e){console.error(fn.name+' error:',e)}});
 }
 
-// ===== DYNAMIC PRIZE =====
+// ===== BETS WARNING BANNER =====
+function renderBetsWarning(){
+  const container=document.getElementById('bets-warning');
+  if(!container)return;
+  if(!currentUser||!isActive(currentUser.id)){container.innerHTML='';return;}
+
+  const now=new Date();
+  const todayStr=now.toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
+
+  const unbetMatches=M.filter(m=>{
+    if(m.h==='TBD'||matchResults[m.id])return false;
+    if(matchDateBRT(m)!==todayStr)return false;
+    const lock=new Date(new Date(m.k).getTime()-LOCKOUT_H*3600000);
+    if(now>=lock)return false;
+    if(allBets[m.id]?.[currentUser.id])return false;
+    return true;
+  });
+
+  // Nav badge on Matches button
+  const matchBtn=document.querySelector('[data-tab="matches"]');
+  if(matchBtn){
+    matchBtn.innerHTML=unbetMatches.length>0
+      ?`⚽ Matches <span class="nav-badge">${unbetMatches.length}</span>`
+      :'⚽ Matches';
+  }
+
+  if(!unbetMatches.length){container.innerHTML='';return;}
+
+  // Find earliest lockout for countdown
+  const locks=unbetMatches.map(m=>new Date(new Date(m.k).getTime()-LOCKOUT_H*3600000));
+  const earliest=new Date(Math.min(...locks.map(d=>d.getTime())));
+  const ms=earliest-now;
+  const h=Math.floor(ms/3600000);
+  const min=Math.floor((ms%3600000)/60000);
+  const timeStr=h>0?`${h}h ${min}min`:`${min} min`;
+
+  const hasBrazil=unbetMatches.some(m=>m.h==='BRA'||m.a==='BRA');
+  const matchNames=unbetMatches.map(m=>{
+    const isBr=m.h==='BRA'||m.a==='BRA';
+    const ko=new Date(m.k).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/Sao_Paulo'});
+    return `${isBr?'🇧🇷 ':''}${T[m.h].n} vs ${T[m.a].n} (${ko} BRT)`;
+  }).join('<br>');
+
+  container.innerHTML=`<div class="bets-warning${hasBrazil?' bets-warning-brazil':''}">
+    <span class="bw-icon">${hasBrazil?'🇧🇷':'⏰'}</span>
+    <div class="bw-text">
+      <strong>${hasBrazil?'Brazil plays today — place your bet!':'You have unbetted matches today!'}</strong>
+      <span>${matchNames}</span>
+      <span class="bw-lock">Lockout in <strong>${timeStr}</strong></span>
+    </div>
+    <button class="bw-btn" onclick="switchTab('matches')">Bet now</button>
+  </div>`;
+}
 function renderPrize(){
   const activeCount=PLAYERS.filter(p=>isActive(p.id)).length;
   const pool=activeCount*BUY_IN;
