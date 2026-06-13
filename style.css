@@ -377,3 +377,18 @@ select:focus, input:focus { outline: none; border-color: var(--dug-orange); box-
 /* === HOROSCOPE BUTTON === */
 .horoscope-btn { background: none; border: 1px solid var(--border); border-radius: 6px; width: 34px; height: 34px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
 .horoscope-btn:hover { background: var(--dug-light-orange); }
+
+/* === BETS WARNING BANNER === */
+.bets-warning { display:flex; align-items:center; gap:10px; background:#FFF8E1; border:1px solid #FFD54F; border-left:4px solid #FF8F00; border-radius:var(--radius); padding:10px 14px; margin:0 auto 0; font-size:13px; max-width:720px; }
+.bets-warning-brazil { background:linear-gradient(135deg,#E8F5E9,#FFFDE7); border-left-color:#009C3B; }
+.bw-icon { font-size:22px; flex-shrink:0; }
+.bw-text { flex:1; line-height:1.6; display:flex; flex-direction:column; gap:2px; }
+.bw-text strong { color:var(--text); font-weight:600; }
+.bw-lock { font-size:12px; color:var(--text-muted); }
+.bets-warning-brazil .bw-lock { color:#2E7D32; }
+.bw-btn { background:#FF8F00; color:#fff; border:none; border-radius:6px; padding:8px 16px; font-size:12px; font-weight:500; cursor:pointer; flex-shrink:0; white-space:nowrap; }
+.bets-warning-brazil .bw-btn { background:#009C3B; }
+.bw-btn:hover { opacity:.9; }
+
+/* === NAV BADGE === */
+.nav-badge { background:#E53935; color:#fff; font-size:10px; font-weight:600; padding:1px 5px; border-radius:99px; margin-left:4px; vertical-align:middle; }
