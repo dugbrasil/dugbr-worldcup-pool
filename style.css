@@ -403,3 +403,42 @@ select:focus, input:focus { outline: none; border-color: var(--dug-orange); box-
 
 /* === SCHEDULE ODDS INLINE === */
 .sched-odds { font-size:11px; color:var(--text-muted); margin-left:8px; }
+
+/* === LEADERBOARD TOP 3 ANIMATION === */
+@keyframes goldPulse{0%,100%{background:rgba(255,215,0,0.04)}50%{background:rgba(255,215,0,0.12)}}
+@keyframes silverSheen{0%,100%{background:rgba(192,192,192,0.04)}50%{background:rgba(192,192,192,0.09)}}
+.lb-row-1{animation:goldPulse 2.5s ease-in-out infinite;}
+.lb-row-1 td:first-child{border-left:3px solid #FFD700;}
+.lb-row-2{animation:silverSheen 3s ease-in-out infinite;}
+.lb-row-2 td:first-child{border-left:3px solid #C0C0C0;}
+.lb-row-3 td:first-child{border-left:3px solid #CD7F32;}
+
+/* === RANK CHANGE INDICATORS === */
+.rank-up{font-size:11px;font-weight:600;color:#2E7D32;margin-left:4px;vertical-align:middle;}
+.rank-dn{font-size:11px;font-weight:600;color:#C62828;margin-left:4px;vertical-align:middle;}
+
+/* === CHAMPION PICKS WALL === */
+.champ-wall{display:flex;flex-direction:column;gap:4px;}
+.cw-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;}
+.cw-flag{font-size:18px;flex-shrink:0;}
+.cw-team{font-weight:500;min-width:80px;}
+.cw-count{font-weight:600;color:var(--dug-orange);min-width:28px;}
+.cw-names{font-size:12px;color:var(--text-muted);}
+
+/* === LOCKOUT COUNTDOWN === */
+.match-countdown{font-size:11px;color:#E65100;font-weight:500;background:#FFF3E0;padding:2px 7px;border-radius:99px;white-space:nowrap;}
+
+/* === BET DISTRIBUTION BAR === */
+.bet-dist{padding:8px 14px 4px;border-top:1px solid var(--border);}
+.bd-bar{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--bg);margin-bottom:4px;}
+.bd-home{background:var(--dug-orange);}
+.bd-tie{background:#888;}
+.bd-away{background:var(--blue);}
+.bd-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);}
+.bd-lh{color:var(--dug-orange);font-weight:500;}
+.bd-lt{color:#888;}
+.bd-la{color:var(--blue);font-weight:500;}
+
+/* === RESULT TOAST === */
+.result-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#2D2D2D;color:#fff;padding:12px 20px;border-radius:99px;font-size:14px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.35);z-index:9999;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .35s;opacity:0;white-space:nowrap;}
+.result-toast.toast-visible{transform:translateX(-50%) translateY(0);opacity:1;}
