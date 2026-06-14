@@ -1,4 +1,4 @@
-/* DUG WORLD CUP 2026 POOL - v3 */
+/* DUGbr WORLD CUP 2026 POOL - v3 */
 
 // ===== CONFIG =====
 // NOTE: Firebase API keys are designed to be public (per Google's docs).
@@ -212,6 +212,7 @@ function initApp(){
   }
   setupLogin(); setupNav(); setupFilters(); setupAdmin(); setupChat();
   setInterval(()=>{if(currentUser){renderBetsWarning(); updateCountdowns();}}, 30000);
+  document.addEventListener('click',()=>document.querySelectorAll('.mob-info-wrap.tip-open').forEach(el=>el.classList.remove('tip-open')));
 }
 
 // ===== LOCAL STORAGE =====
@@ -702,22 +703,17 @@ function renderMatchCard(m,now,showFact){
     </div>`;
   // Match fact from Firebase
   const fact=showFact&&matchFacts[m.id]?`<div class="match-fact"><span>🤖</span> ${esc(matchFacts[m.id])}</div>`:'';
-  // Odds from Firebase - Option B layout
+  // Odds from Firebase - compact one line + floating tooltip on ⓘ
   const od=matchOdds[m.id];
   const oddsHtml=od&&!isLive?`<div class="match-odds-b">
-    <div class="mob-header">
-      <span class="mob-title">MATCH ODDS</span>
-      <button class="mob-info-btn" onclick="this.nextElementSibling.classList.toggle('mob-tip-open')" title="About these odds">ⓘ</button>
-      <div class="mob-tip">These are the implied probabilities from major bookmakers (DraftKings, FanDuel, Bet365). They show how likely each outcome is according to the betting market.</div>
-    </div>
-    <div class="mob-grid">
-      <span class="mob-team">${hm.f} ${hm.n} win</span>
-      <span class="mob-team">Tie</span>
-      <span class="mob-team">${aw.n} win ${aw.f}</span>
-      <span class="mob-pct mob-ph">${od.home}%</span>
-      <span class="mob-pct mob-pt">${od.draw}%</span>
-      <span class="mob-pct mob-pa">${od.away}%</span>
-    </div>
+    <span class="mob-label">MATCH ODDS</span>
+    <span class="mob-h">${hm.f} <strong>${od.home}%</strong></span>
+    <span class="mob-t">Tie <strong>${od.draw}%</strong></span>
+    <span class="mob-a"><strong>${od.away}%</strong> ${aw.f}</span>
+    <span class="mob-info-wrap">
+      <button class="mob-info-btn" onclick="event.stopPropagation();this.closest('.mob-info-wrap').classList.toggle('tip-open')" title="About these odds">ⓘ</button>
+      <div class="mob-float-tip">These are the implied probabilities from major bookmakers (DraftKings, FanDuel, Bet365). They show how likely each outcome is according to the betting market.</div>
+    </span>
   </div>`:'';
 
   // Countdown to lockout
