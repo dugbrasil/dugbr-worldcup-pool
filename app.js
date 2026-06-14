@@ -1,4 +1,4 @@
-/* DUGbr WORLD CUP 2026 POOL - v3 */
+/* DUG WORLD CUP 2026 POOL - v3 */
 
 // ===== CONFIG =====
 // NOTE: Firebase API keys are designed to be public (per Google's docs).
