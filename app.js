@@ -1,4 +1,4 @@
-/* DUG WORLD CUP 2026 POOL - v3 */
+/* DUGbr WORLD CUP 2026 POOL - v3 */
 
 // ===== CONFIG =====
 // NOTE: Firebase API keys are designed to be public (per Google's docs).
@@ -663,6 +663,11 @@ function renderMatches(filter='today'){
   if(saveAllBtn)saveAllBtn.addEventListener('click',saveAllBets);
   // Attach horoscope handlers
   c.querySelectorAll('.horoscope-btn').forEach(b=>b.addEventListener('click',()=>horoscopeBet(b.dataset.mid)));
+  // Attach live points hint on score inputs
+  c.querySelectorAll('.score-input:not([disabled])').forEach(input=>{
+    const mid=input.id.replace(/^[ha]-/,'');
+    input.addEventListener('input',()=>updatePtsHint(mid));
+  });
 }
 
 function renderMatchCard(m,now,showFact){
@@ -697,14 +702,24 @@ function renderMatchCard(m,now,showFact){
     </div>`;
   // Match fact from Firebase
   const fact=showFact&&matchFacts[m.id]?`<div class="match-fact"><span>🤖</span> ${esc(matchFacts[m.id])}</div>`:'';
-  // Odds from Firebase
+  // Odds from Firebase - Option B layout
   const od=matchOdds[m.id];
-  const oddsHtml=od&&!isLive?`<div class="match-odds">
-    <span class="mo-h">${hm.f} <strong>${od.home}%</strong></span>
-    <span class="mo-d">Tie <strong>${od.draw}%</strong></span>
-    <span class="mo-a"><strong>${od.away}%</strong> ${aw.f}</span>
-    <span class="mo-src">· ${od.source||'Bookmaker avg'}</span>
+  const oddsHtml=od&&!isLive?`<div class="match-odds-b">
+    <div class="mob-header">
+      <span class="mob-title">MATCH ODDS</span>
+      <button class="mob-info-btn" onclick="this.nextElementSibling.classList.toggle('mob-tip-open')" title="About these odds">ⓘ</button>
+      <div class="mob-tip">These are the implied probabilities from major bookmakers (DraftKings, FanDuel, Bet365). They show how likely each outcome is according to the betting market.</div>
+    </div>
+    <div class="mob-grid">
+      <span class="mob-team">${hm.f} ${hm.n} win</span>
+      <span class="mob-team">Tie</span>
+      <span class="mob-team">${aw.n} win ${aw.f}</span>
+      <span class="mob-pct mob-ph">${od.home}%</span>
+      <span class="mob-pct mob-pt">${od.draw}%</span>
+      <span class="mob-pct mob-pa">${od.away}%</span>
+    </div>
   </div>`:'';
+
   // Countdown to lockout
   const countdownHtml=!locked&&!bet&&!res&&!pending&&!isLive&&(lock-now)>0
     ?`<span class="match-countdown" data-locktime="${lock.getTime()}">🔒 ${formatCountdown(lock-now)}</span>`:'';
@@ -717,6 +732,7 @@ function renderMatchCard(m,now,showFact){
     <div class="match-teams-row"><div class="match-team"><span class="flag">${hm.f}</span> ${hm.n}</div>
     ${vsHtml}
     <div class="match-team right">${aw.n} <span class="flag">${aw.f}</span></div></div>
+    ${canEdit?`<div class="pts-hint" id="hint-${m.id}"></div>`:''}
     <div class="match-meta"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
     ${m.g?`<span class="match-group">Group ${m.g}</span>`:m.r?`<span class="match-group">${m.r}</span>`:''}${timeDisplay}
     ${!isLive?`<span class="match-info">📍 ${m.v}</span>`:''}${countdownHtml}</div>${actionBtn}</div>
@@ -742,6 +758,35 @@ function renderBetDist(mBets,hm,aw){
       <span class="bd-la">${a} ${aw.f}</span>
     </div>
   </div>`;
+}
+
+// ===== LIVE POINTS HINT =====
+function updatePtsHint(mid){
+  const hEl=document.getElementById(`h-${mid}`),aEl=document.getElementById(`a-${mid}`),hint=document.getElementById(`hint-${mid}`);
+  if(!hEl||!aEl||!hint)return;
+  if(hEl.value===''||aEl.value===''){hint.innerHTML='';return;}
+  const h=+hEl.value,a=+aEl.value;
+  const match=M.find(m=>m.id===mid); if(!match)return;
+  const hm=T[match.h],aw=T[match.a];
+  let html='';
+  if(h===a){
+    html=`<div class="ph-label">Predicting a tie</div>
+    <div class="ph-row"><span class="ph-dot ph-10"></span>Exact score ${h}-${a}: <strong>+10 pts</strong></div>
+    <div class="ph-row"><span class="ph-dot ph-5"></span>Any other tie (e.g. ${h+1}-${a+1}): <strong>+5 pts</strong></div>`;
+  } else if(h>a){
+    const gd=h-a;
+    html=`<div class="ph-label">${hm.f} ${hm.n} win by ${gd}</div>
+    <div class="ph-row"><span class="ph-dot ph-10"></span>Exact score ${h}-${a}: <strong>+10 pts</strong></div>
+    <div class="ph-row"><span class="ph-dot ph-5"></span>${gd}-goal win (e.g. ${h+1}-${a+1}): <strong>+5 pts</strong></div>
+    <div class="ph-row"><span class="ph-dot ph-3"></span>${hm.n} win any margin: <strong>+3 pts</strong></div>`;
+  } else {
+    const gd=a-h;
+    html=`<div class="ph-label">${aw.f} ${aw.n} win by ${gd}</div>
+    <div class="ph-row"><span class="ph-dot ph-10"></span>Exact score ${h}-${a}: <strong>+10 pts</strong></div>
+    <div class="ph-row"><span class="ph-dot ph-5"></span>${gd}-goal win (e.g. ${h+1}-${a+1}): <strong>+5 pts</strong></div>
+    <div class="ph-row"><span class="ph-dot ph-3"></span>${aw.n} win any margin: <strong>+3 pts</strong></div>`;
+  }
+  hint.innerHTML=html;
 }
 
 function placeBet(mid){
