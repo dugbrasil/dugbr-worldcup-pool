@@ -1,4 +1,4 @@
-/* === DUGbr WORLD CUP POOL — STYLES === */
+/* === DUG WORLD CUP POOL — STYLES === */
 /* Brand: DUG orange #FF9100, gold #F3BA6D, dark #2D2D2D, gray #4A4A4A */
 
 :root {
@@ -594,17 +594,15 @@ select:focus, input:focus { outline: none; border-color: var(--dug-orange); box-
 .help-examples p:last-child { margin-bottom: 0; }
 .help-examples strong { color: var(--text); }
 
-/* ===== MATCH ODDS COMPACT (one line + floating tooltip) ===== */
-.match-odds-b { display:flex; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); font-size:12px; flex-wrap:nowrap; overflow:hidden; }
+/* ===== MATCH ODDS COMPACT (one line + global fixed tooltip) ===== */
+.match-odds-b { display:flex; align-items:center; gap:8px; padding:6px 14px; border-top:1px solid var(--border); font-size:12px; flex-wrap:nowrap; }
 .mob-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--text-muted); white-space:nowrap; flex-shrink:0; }
 .mob-h { color:var(--dug-orange); white-space:nowrap; }
 .mob-t { color:#888; white-space:nowrap; }
 .mob-a { color:var(--blue); white-space:nowrap; }
 .mob-h strong, .mob-t strong, .mob-a strong { font-weight:600; }
-.mob-info-wrap { position:relative; margin-left:auto; flex-shrink:0; }
+.mob-sep { color:var(--border); font-size:13px; }
+.mob-info-wrap { margin-left:auto; flex-shrink:0; }
 .mob-info-btn { background:none; border:1px solid var(--text-muted); border-radius:50%; width:16px; height:16px; font-size:10px; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0; line-height:1; }
 .mob-info-btn:hover { border-color:var(--dug-orange); color:var(--dug-orange); }
-.mob-float-tip { display:none; position:absolute; bottom:calc(100% + 8px); right:0; width:230px; background:#2D2D2D; color:#eee; font-size:12px; line-height:1.6; padding:10px 12px; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.35); z-index:50; pointer-events:none; }
-.mob-float-tip::after { content:''; position:absolute; top:100%; right:6px; border:6px solid transparent; border-top-color:#2D2D2D; }
-.mob-info-wrap:hover .mob-float-tip { display:block; }
-.mob-info-wrap.tip-open .mob-float-tip { display:block; }
+.odds-global-tip { position:fixed; width:240px; background:#2D2D2D; color:#eee; font-size:12px; line-height:1.6; padding:10px 12px; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.35); z-index:9000; pointer-events:none; transform:translateY(calc(-100% - 10px)); }
