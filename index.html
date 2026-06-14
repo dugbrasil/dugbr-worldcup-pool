@@ -248,7 +248,7 @@
     </div>
     <div class="section-label">📝 Details</div>
     <div class="info-box">
-      <p>The team lunch includes everyone (Rio office + remote via call). The winner picks the restaurant. R$525 covers the lunch. If the bill exceeds R$525, the group splits the extra.</p>
+      <p>The team lunch includes everyone (Rio office). The winner picks the restaurant. R$525 covers the lunch. If the bill exceeds R$525, the group splits the extra.</p>
       <p style="margin-top:8px">Champion picks can be changed until June 22, 23:59 BRT. After that, picks are locked for the rest of the tournament.</p>
     </div>
   </section>
@@ -369,10 +369,16 @@
     <div class="help-divider"></div>
     <div class="help-section">
       <div class="help-section-title">📊 Points system</div>
-      <div class="help-pts-row exact"><span>Exact score (e.g. you said 2-1, it ended 2-1)</span><span class="help-pts">+10</span></div>
-      <div class="help-pts-row gd"><span>Right goal difference (e.g. 3-2 vs 2-1, both a one-goal win)</span><span class="help-pts">+5</span></div>
-      <div class="help-pts-row out"><span>Right winner or tie, wrong score</span><span class="help-pts">+3</span></div>
-      <p style="margin-top:8px;font-size:12px;color:var(--text-muted)">Tiebreaker: most exact scores wins. Then goal difference. Then outcomes. Then earliest registration.</p>
+      <div class="help-pts-row exact"><span>Exact score</span><span class="help-pts">+10</span></div>
+      <div class="help-pts-row gd"><span>Right winning margin, wrong score</span><span class="help-pts">+5</span></div>
+      <div class="help-pts-row out"><span>Right winner or tie, wrong margin</span><span class="help-pts">+3</span></div>
+      <div class="help-examples">
+        <p><strong>What "right winning margin" means:</strong></p>
+        <p>Bet 2-1, result 3-2. Both are a 1-goal win for the home team. Same margin, different score. That pays <strong>+5</strong>.</p>
+        <p>Bet 2-1, result 4-1. You got the winner right but the margin is different (1 goal vs 3 goals). That pays <strong>+3</strong>.</p>
+        <p>Bet 1-1, result 2-2. Both are a tie with zero goal difference. That pays <strong>+5</strong>.</p>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:6px">Tiebreaker: most exact scores wins. Then right margins. Then correct outcomes. Then earliest registration.</p>
     </div>
 
     <div class="help-divider"></div>
@@ -407,6 +413,7 @@
       <div class="help-tab-row"><span class="help-tab-icon">⚽</span><div><span class="help-tab-name">Matches:</span> place and update bets, see what others predicted, check odds and match facts</div></div>
       <div class="help-tab-row"><span class="help-tab-icon">📊</span><div><span class="help-tab-name">My Bets:</span> your personal history, streak, and champion pick</div></div>
       <div class="help-tab-row"><span class="help-tab-icon">📅</span><div><span class="help-tab-name">Schedule:</span> full tournament schedule, group tables, and Brazil's path</div></div>
+      <div class="help-tab-row"><span class="help-tab-icon">⚽</span><div><span class="help-tab-name">Standings:</span> FIFA-style group tables showing GP, W, D, L, GF, GA, GD and points for all 12 groups. Updates live as results come in. Group C (Brazil) shown first.</div></div>
       <div class="help-tab-row"><span class="help-tab-icon">💰</span><div><span class="help-tab-name">Prize:</span> prize structure, full rules, and tiebreaker details</div></div>
     </div>
 
