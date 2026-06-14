@@ -219,12 +219,19 @@ function initApp(){
 let _oddsHideTimer=null;
 function showOddsTooltip(btn){
   clearTimeout(_oddsHideTimer);
-  const tip=document.getElementById('odds-global-tip'); if(!tip)return;
+  let tip=document.getElementById('odds-global-tip');
+  if(!tip){
+    tip=document.createElement('div');
+    tip.id='odds-global-tip';
+    tip.className='odds-global-tip';
+    tip.textContent='These are the implied probabilities from major bookmakers (DraftKings, FanDuel, Bet365). They show how likely each outcome is according to the betting market.';
+    document.body.appendChild(tip);
+  }
   const r=btn.getBoundingClientRect();
   const tipW=240;
   let left=r.right-tipW; if(left<8)left=8;
   tip.style.left=left+'px';
-  tip.style.top=(r.top-8)+'px';
+  tip.style.top=r.top+'px';
   tip.style.display='block';
 }
 function scheduleHideOddsTooltip(){_oddsHideTimer=setTimeout(hideOddsTooltip,200)}
