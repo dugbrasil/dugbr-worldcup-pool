@@ -576,3 +576,35 @@ select:focus, input:focus { outline: none; border-color: var(--dug-orange); box-
 .fd-d { background:#888; }
 .fd-l { background:#C62828; }
 .fd-live { opacity:.65; outline:1.5px dashed currentColor; outline-offset:1px; }
+
+/* ===== LIVE POINTS HINT ON MATCH CARDS ===== */
+.pts-hint { padding: 4px 14px 8px; }
+.pts-hint:empty { display: none; padding: 0; }
+.ph-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 5px; }
+.ph-row { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-muted); margin-bottom: 3px; }
+.ph-row strong { color: var(--text); font-weight: 600; }
+.ph-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ph-10 { background: #E65100; }
+.ph-5  { background: #2E7D32; }
+.ph-3  { background: #1565C0; }
+
+/* ===== HELP OVERLAY EXAMPLES BLOCK ===== */
+.help-examples { background: var(--bg); border-radius: 6px; padding: 10px 12px; margin: 8px 0; }
+.help-examples p { font-size: 12px; color: var(--text-muted); line-height: 1.65; margin-bottom: 5px; }
+.help-examples p:last-child { margin-bottom: 0; }
+.help-examples strong { color: var(--text); }
+
+/* ===== MATCH ODDS OPTION B ===== */
+.match-odds-b { padding: 8px 14px 10px; border-top: 1px solid var(--border); }
+.mob-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.mob-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--text-muted); }
+.mob-info-btn { background: none; border: 1px solid var(--text-muted); border-radius: 50%; width: 16px; height: 16px; font-size: 10px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0; line-height: 1; }
+.mob-info-btn:hover { border-color: var(--dug-orange); color: var(--dug-orange); }
+.mob-tip { display: none; font-size: 12px; color: var(--text-muted); line-height: 1.6; background: var(--bg); border-radius: 6px; padding: 8px 10px; margin-top: 4px; border: 1px solid var(--border); }
+.mob-tip.mob-tip-open { display: block; }
+.mob-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; gap: 2px; }
+.mob-team { font-size: 11px; color: var(--text-muted); padding-bottom: 2px; }
+.mob-pct { font-size: 18px; font-weight: 700; padding: 2px 0; }
+.mob-ph { color: var(--dug-orange); }
+.mob-pt { color: #888; }
+.mob-pa { color: var(--blue); }
