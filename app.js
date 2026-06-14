@@ -1,4 +1,4 @@
-/* DUGbr WORLD CUP 2026 POOL - v3 */
+/* DUGgiesbr WORLD CUP 2026 POOL - v3 */
 
 // ===== CONFIG =====
 // NOTE: Firebase API keys are designed to be public (per Google's docs).
@@ -212,8 +212,24 @@ function initApp(){
   }
   setupLogin(); setupNav(); setupFilters(); setupAdmin(); setupChat();
   setInterval(()=>{if(currentUser){renderBetsWarning(); updateCountdowns();}}, 30000);
-  document.addEventListener('click',()=>document.querySelectorAll('.mob-info-wrap.tip-open').forEach(el=>el.classList.remove('tip-open')));
+  document.addEventListener('click',()=>hideOddsTooltip());
 }
+
+// ===== ODDS TOOLTIP (fixed position, escapes overflow:hidden) =====
+let _oddsHideTimer=null;
+function showOddsTooltip(btn){
+  clearTimeout(_oddsHideTimer);
+  const tip=document.getElementById('odds-global-tip'); if(!tip)return;
+  const r=btn.getBoundingClientRect();
+  const tipW=240;
+  let left=r.right-tipW; if(left<8)left=8;
+  tip.style.left=left+'px';
+  tip.style.top=(r.top-8)+'px';
+  tip.style.display='block';
+}
+function scheduleHideOddsTooltip(){_oddsHideTimer=setTimeout(hideOddsTooltip,200)}
+function hideOddsTooltip(){const t=document.getElementById('odds-global-tip');if(t)t.style.display='none';}
+function toggleOddsTooltip(btn){const t=document.getElementById('odds-global-tip');if(t&&t.style.display==='block'){hideOddsTooltip()}else{showOddsTooltip(btn)}}
 
 // ===== LOCAL STORAGE =====
 function lsS(k,d){localStorage.setItem('dp_'+k,JSON.stringify(d))}
@@ -703,16 +719,17 @@ function renderMatchCard(m,now,showFact){
     </div>`;
   // Match fact from Firebase
   const fact=showFact&&matchFacts[m.id]?`<div class="match-fact"><span>🤖</span> ${esc(matchFacts[m.id])}</div>`:'';
-  // Odds from Firebase - compact one line + floating tooltip on ⓘ
+  // Odds from Firebase - compact one line + fixed-position tooltip on ⓘ
   const od=matchOdds[m.id];
   const oddsHtml=od&&!isLive?`<div class="match-odds-b">
-    <span class="mob-label">MATCH ODDS</span>
-    <span class="mob-h">${hm.f} <strong>${od.home}%</strong></span>
+    <span class="mob-label">Odds</span>
+    <span class="mob-h">${hm.f} Win <strong>${od.home}%</strong></span>
+    <span class="mob-sep">|</span>
     <span class="mob-t">Tie <strong>${od.draw}%</strong></span>
-    <span class="mob-a"><strong>${od.away}%</strong> ${aw.f}</span>
+    <span class="mob-sep">|</span>
+    <span class="mob-a">${aw.f} Win <strong>${od.away}%</strong></span>
     <span class="mob-info-wrap">
-      <button class="mob-info-btn" onclick="event.stopPropagation();this.closest('.mob-info-wrap').classList.toggle('tip-open')" title="About these odds">ⓘ</button>
-      <div class="mob-float-tip">These are the implied probabilities from major bookmakers (DraftKings, FanDuel, Bet365). They show how likely each outcome is according to the betting market.</div>
+      <button class="mob-info-btn" onmouseenter="showOddsTooltip(this)" onmouseleave="scheduleHideOddsTooltip()" onclick="event.stopPropagation();toggleOddsTooltip(this)">ⓘ</button>
     </span>
   </div>`:'';
 
