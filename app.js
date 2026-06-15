@@ -36,7 +36,8 @@ const PLAYERS = [
   {id:"p11",name:"Márcia Corredera"},
   {id:"p12",name:"Rafaela Rossi"},
   {id:"p13",name:"Valter Marques"},
-  {id:"p14",name:"Wilson Duarte"}
+  {id:"p14",name:"Wilson Duarte"},
+  {id:"p15",name:"Leonardo Moreira"}  
 ];
 // Short name helper: appends last-name initial when first name is shared (e.g. CarlosB, CarlosS)
 const SHORT_NAMES={};
