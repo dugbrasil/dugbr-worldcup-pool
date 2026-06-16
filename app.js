@@ -892,8 +892,9 @@ function placeBet(mid){
 }
 
 function saveAllBets(){
-  let saved=0;
   const now=new Date();
+  // Collect all values from DOM FIRST (before any Firebase write triggers renderAll and destroys inputs)
+  const toSave=[];
   M.forEach(m=>{
     if(m.h==='TBD'||matchResults[m.id])return;
     const ko=new Date(m.k),lock=new Date(ko.getTime()-LOCKOUT_H*36e5);
@@ -903,14 +904,16 @@ function saveAllBets(){
     const hv=hEl.value,av=aEl.value;
     if(hv===''||av==='')return;
     const existing=allBets[m.id]?.[currentUser.id];
-    if(existing&&existing.h===+hv&&existing.a===+av)return; // no change
-    const bet={h:+hv,a:+av,ts:Date.now()};
-    if(db)db.ref(`bets/${m.id}/${currentUser.id}`).set(bet);
-    else{if(!allBets[m.id])allBets[m.id]={}; allBets[m.id][currentUser.id]=bet;}
-    saved++;
+    if(existing&&existing.h===+hv&&existing.a===+av)return;
+    toSave.push({mid:m.id, bet:{h:+hv,a:+av,ts:Date.now()}});
+  });
+  // Now write all collected bets
+  toSave.forEach(({mid,bet})=>{
+    if(db)db.ref(`bets/${mid}/${currentUser.id}`).set(bet);
+    else{if(!allBets[mid])allBets[mid]={}; allBets[mid][currentUser.id]=bet;}
   });
   if(!db)saveLS();
-  if(saved>0){alert(`${saved} bet(s) saved!`); renderMatches(document.querySelector('.filter-btn.active')?.dataset.filter||'today')}
+  if(toSave.length>0){alert(`${toSave.length} bet(s) saved!`); renderMatches(document.querySelector('.filter-btn.active')?.dataset.filter||'today')}
   else alert('No new or changed bets to save.');
 }
 
