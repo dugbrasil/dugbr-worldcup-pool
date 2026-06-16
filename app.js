@@ -290,18 +290,11 @@ function setupFirebaseListeners(){
     if(currentUser)renderAll();
   });
   
-  // FIX: Removed .orderByChild('ts') to prevent Firebase from filtering out messages.
-// No complex sorting or filtering needed anymore!
   db.ref('messages').limitToLast(50).on('value', s => {
     allMessages = []; 
-    
     s.forEach(c => {
       allMessages.push({ id: c.key, ...c.val() });
     });
-    
-    // 🔍 This should now output: "ARRAY CHECK: 14"
-    console.log("👉 ARRAY CHECK: Total items in allMessages =", allMessages.length);
-    
     if (currentUser) renderChat();
   });
 }
@@ -319,6 +312,23 @@ function setupPIXButtons(){
   });
 }
 
+// ===== LOGIN PRIZE BOX (dynamic, based on active players) =====
+function renderLoginPrizeBox(){
+  const activeCount=PLAYERS.filter(p=>isActive(p.id)).length;
+  const count=activeCount>0?activeCount:PLAYERS.length;
+  const pool=count*BUY_IN;
+  const html=`<div class="lpb-title">🏆 What you're playing for</div>
+    <div class="lpb-pool">Pool: <strong>R$${pool.toLocaleString()}</strong> <span class="lpb-grow">grows as players join</span></div>
+    <div class="lpb-row"><span>🥇 1st place</span><span>25% + hosts the lunch</span></div>
+    <div class="lpb-row"><span>🥈 2nd place</span><span>15%</span></div>
+    <div class="lpb-row"><span>🥉 3rd place</span><span>10%</span></div>
+    <div class="lpb-foot">50% of the pool funds the team lunch</div>`;
+  const b1=document.getElementById('login-prize-box-1');
+  const b2=document.getElementById('login-prize-box-2');
+  if(b1)b1.innerHTML=html;
+  if(b2)b2.innerHTML=html;
+}
+
 // ===== LOGIN =====
 function setupLogin(){
   const sel=document.getElementById('login-select'),
@@ -331,6 +341,7 @@ function setupLogin(){
   PLAYERS.forEach(p=>{const o=document.createElement('option'); o.value=p.id; o.textContent=p.name; sel.appendChild(o)});
   Object.entries(T).filter(([c])=>c!=='TBD').sort((a,b)=>a[1].n.localeCompare(b[1].n)).forEach(([c,t])=>{
     const o=document.createElement('option'); o.value=c; o.textContent=`${t.f} ${t.n}`; chSel.appendChild(o)});
+  renderLoginPrizeBox();
   // Check if already logged in locally
   const saved=localStorage.getItem('dp_user');
   if(saved){currentUser=PLAYERS.find(p=>p.id===saved); if(currentUser){showApp(); return}}
@@ -367,12 +378,19 @@ function setupLogin(){
   });
 }
 
+function logout(){
+  if(!confirm('Log out and return to the login screen? Your bets are saved.'))return;
+  localStorage.removeItem('dp_user');
+  currentUser=null;
+  location.reload();
+}
+
 function showApp(){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app-header').style.display='block';
   document.getElementById('app-content').style.display='block';
   const ch=champions[currentUser.id]; const cf=ch?T[ch]?.f||'':'';
-  document.getElementById('user-area').innerHTML=`${cf} <span>${currentUser.name}</span>`;
+  document.getElementById('user-area').innerHTML=`${cf} <span>${currentUser.name}</span> <button class="logout-btn" onclick="logout()" title="Log out">Log out</button>`;
   updatePendingState(); renderAll();
 }
 
@@ -512,6 +530,10 @@ function renderLeaderboard(){
     liveBanner.innerHTML=`<span class="live-dot-pulse"></span> LIVE: ${liveMatches} <span class="lb-live-note">Rankings update in real time</span>`;
     liveBanner.style.display=hasLive?'flex':'none';
   }
+  // Load persisted previous ranks (so arrows show on first load too)
+  if(Object.keys(prevRanks).length===0){
+    const stored=lsL('prevRanks'); if(stored)prevRanks=stored;
+  }
   tbody.innerHTML=standings.map((s,i)=>{
     const rk=i+1, rc=rk<=3?`rank-${rk}`:'rank-n', cf=s.ch?T[s.ch]?.f||'':'';
     const pct=mx>0?Math.round(s.total/mx*100):0;
@@ -526,7 +548,9 @@ function renderLeaderboard(){
       <td><span class="player-name">${crown}${s.name}</span>${changeHtml}${badges}${st} <span class="player-champion">${cf}</span></td>
       <td class="col-num">${s.exact}</td><td class="col-num">${s.gd}</td><td class="col-num">${s.outcome}</td>
       <td class="pts-cell">${s.total} <span class="pts-bar"><span class="pts-bar-fill" style="width:${pct}%"></span></span></td></tr>`}).join('');
-  standings.forEach((s,i)=>{prevRanks[s.id]=i+1;});
+  // Persist current ranks for next comparison
+  const newRanks={}; standings.forEach((s,i)=>{newRanks[s.id]=i+1;});
+  prevRanks=newRanks; lsS('prevRanks',newRanks);
 }
 
 function getStreakBadge(s){let c=0; for(let i=s.streak.length-1;i>=0;i--){if(s.streak[i].t!=='wrong'&&s.streak[i].t!=='pending')c++;else break} return c>=3?'🔥':''}
@@ -637,12 +661,60 @@ function renderChampionWall(){
 
 // ===== AWARDS =====
 function renderAwards(){
-  const stats=PLAYERS.map(p=>({...p,...getStats(p.id)}));
-  const oracle=stats.sort((a,b)=>b.exact-a.exact)[0];
-  document.getElementById('award-oracle').textContent=oracle.exact>0?oracle.name:'—';
-  let best={n:'—',c:0}; stats.forEach(s=>{let c=0,mx=0; s.streak.forEach(r=>{if(r.t!=='wrong'&&r.t!=='pending'){c++;mx=Math.max(mx,c)}else c=0}); if(mx>best.c)best={n:s.name,c:mx}});
-  document.getElementById('award-streak').textContent=best.c>=3?best.name:'—';
-  const sids=Object.keys(matchResults); if(sids.length>0){let worst={n:'—',m:0}; stats.forEach(s=>{const miss=sids.filter(id=>!allBets[id]?.[s.id]).length; if(miss>worst.m)worst={n:s.name,m:miss}}); document.getElementById('award-sloth').textContent=worst.m>0?worst.name:'—'}
+  const stats=PLAYERS.map(p=>({...p,...getStats(p.id)})).filter(s=>isActive(s.id));
+  const sids=Object.keys(matchResults);
+  if(!stats.length){return;}
+
+  // THE ORACLE: most exact scores
+  const oracle=[...stats].sort((a,b)=>b.exact-a.exact)[0];
+  const oracleEl=document.getElementById('award-oracle');
+  if(oracleEl)oracleEl.textContent=oracle&&oracle.exact>0?shortName(oracle):'—';
+
+  // HOT STREAK: best recent form (most correct in last 3 settled matches)
+  if(sids.length>0){
+    const recent=sids.slice(-3);
+    let best={name:'—',score:-1};
+    stats.forEach(s=>{
+      let score=0;
+      recent.forEach(mid=>{
+        const bet=allBets[mid]?.[s.id], res=matchResults[mid];
+        if(bet&&res){const r=calcPts(bet.h,bet.a,res.h,res.a); if(r&&r.t!=='wrong')score+=(r.t==='exact'?3:r.t==='gd'?2:1);}
+      });
+      if(score>best.score)best={name:shortName(s),score};
+    });
+    const streakEl=document.getElementById('award-streak');
+    if(streakEl)streakEl.textContent=best.score>0?best.name:'—';
+  }
+
+  // THE SLOTH: lowest points among active players (with at least one bet placed)
+  if(sids.length>0){
+    const withBets=stats.filter(s=>s.bets>0);
+    if(withBets.length){
+      const sloth=[...withBets].sort((a,b)=>a.total-b.total||b.wrong-a.wrong)[0];
+      const slothEl=document.getElementById('award-sloth');
+      if(slothEl)slothEl.textContent=shortName(sloth);
+    }
+  }
+
+  // BANDWAGON: bets with the majority most often
+  if(sids.length>0){
+    let best={name:'—',count:-1};
+    stats.forEach(s=>{
+      let withMajority=0;
+      sids.forEach(mid=>{
+        const bet=allBets[mid]?.[s.id]; if(!bet)return;
+        const mBets=allBets[mid]||{}; let h=0,t=0,a=0;
+        Object.values(mBets).forEach(b=>{const d=b.h-b.a; if(d>0)h++;else if(d<0)a++;else t++;});
+        const total=h+t+a; if(total<2)return;
+        const maxOutcome=Math.max(h,t,a);
+        const myOutcome=bet.h>bet.a?h:bet.h<bet.a?a:t;
+        if(myOutcome===maxOutcome)withMajority++;
+      });
+      if(withMajority>best.count)best={name:shortName(s),count:withMajority};
+    });
+    const bwEl=document.getElementById('award-bandwagon');
+    if(bwEl)bwEl.textContent=best.count>0?best.name:'—';
+  }
 }
 
 // ===== RIVALRIES =====
@@ -1059,14 +1131,14 @@ function copyInvite(){
   const url=SITE_URL;
   const ac=PLAYERS.filter(p=>isActive(p.id)).length||14;
   const pool=ac*BUY_IN;
-  const txt=`Pessoal,\n\nWe're running a World Cup prediction pool for DUG Brasil. Simple rules, real money, and a team lunch at stake.\n\nThe game:\nPredict the final score for each match. You earn points based on how close you get:\n- Exact score: 10 points\n- Correct goal difference: 5 points\n- Correct winner/draw: 3 points\n\nYou also pick a champion team when you register. If they go far, you earn bonus points (+15 for winning, +5 for the final, +3 for the semis). You can change your pick until June 22.\n\nPrize pool:\nBuy-in: R$${BUY_IN} per person\n- 50% (R$${Math.round(pool*0.5)}) funds a team lunch, restaurant chosen by the winner\n- 25% (R$${Math.round(pool*0.25)}) to 1st place\n- 15% (R$${Math.round(pool*0.15)}) to 2nd place\n- 10% (R$${Math.round(pool*0.1)}) to 3rd place\n\nTo join:\n1. Open the pool: ${url}\n2. Select your name from the dropdown\n3. Pick your World Cup champion team\n4. Scan the QR code or copy the PIX key to pay R$${BUY_IN}\n\nYour account will be activated once I confirm the payment.\n\nBets lock 1 hour before each match kickoff. The pool covers all 104 matches through the final on July 19.\n\nThe site has a live leaderboard, weekly awards, head-to-head rivalries, full tournament schedule, and a trash talk wall.\n\nQuestions? Just reach out.\n\nWilson`;
+  const txt=`Pessoal,\n\nWe're running a World Cup prediction pool for DUG Brasil. Simple rules, real money, and a team lunch at stake.\n\nThe game:\nPredict the final score for each match. You earn points based on how close you get:\n- Exact score: 10 points\n- Correct goal difference: 5 points\n- Correct winner/draw: 3 points\n\nYou also pick a champion team when you register. If they go far, you earn bonus points (+15 for winning, +5 for the final, +3 for the semis). You can change your pick until June 22.\n\nPrize pool:\nBuy-in: R$${BUY_IN} per person\n- 50% (R$${Math.round(pool*0.5)}) funds a team lunch, restaurant chosen by the winner\n- 25% (R$${Math.round(pool*0.25)}) to 1st place\n- 15% (R$${Math.round(pool*0.15)}) to 2nd place\n- 10% (R$${Math.round(pool*0.1)}) to 3rd place\n\nTo join:\n1. Open the pool: ${url}\n2. Select your name from the dropdown\n3. Pick your World Cup champion team\n4. Scan the QR code or copy the PIX key to pay R$${BUY_IN}\n\nYour account will be activated once I confirm the payment.\n\nBets lock 15 minutes before each match kickoff. The pool covers all 104 matches through the final on July 19.\n\nThe site has a live leaderboard, weekly awards, head-to-head rivalries, full tournament schedule, and a trash talk wall.\n\nQuestions? Just reach out.\n\nWilson`;
   navigator.clipboard.writeText(txt).then(()=>alert('Invite email copied!'));
 }
 
 function copyConfirmEmail(pid){
   const p=PLAYERS.find(x=>x.id===pid); if(!p)return;
   const url=SITE_URL||'[SITE LINK]';
-  const txt=`Hey ${p.name.split(' ')[0]},\n\nPIX confirmed, you're officially in the DUG World Cup Pool!\n\nYour account is now active. You can place bets on all upcoming matches.\n\nQuick links:\n- Place bets: ${url}\n- Full schedule: ${url} (Schedule tab)\n- Rules and prizes: ${url} (Prize tab)\n\nBets lock 1 hour before kickoff. Check the Matches tab for today's games.\n\nGood luck!\n\nWilson`;
+  const txt=`Hey ${p.name.split(' ')[0]},\n\nPIX confirmed, you're officially in the DUG World Cup Pool!\n\nYour account is now active. You can place bets on all upcoming matches.\n\nQuick links:\n- Place bets: ${url}\n- Full schedule: ${url} (Schedule tab)\n- Rules and prizes: ${url} (Prize tab)\n\nBets lock 15 minutes before kickoff. Check the Matches tab for today's games.\n\nGood luck!\n\nWilson`;
   navigator.clipboard.writeText(txt).then(()=>alert(`Confirmation email for ${p.name} copied!`));
 }
 
