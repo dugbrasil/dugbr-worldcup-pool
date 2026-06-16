@@ -21,33 +21,11 @@
   <div class="wave-ball-outer">
     <svg class="wave-ball-inner" width="34" height="34" viewBox="0 0 100 100">
       <defs>
-        <radialGradient id="wb_base" cx="34%" cy="28%" r="72%">
-          <stop offset="0%" stop-color="#fff"/>
-          <stop offset="18%" stop-color="#f8f8f8"/>
-          <stop offset="52%" stop-color="#e2e2e2"/>
-          <stop offset="82%" stop-color="#aaa"/>
-          <stop offset="100%" stop-color="#555"/>
-        </radialGradient>
-        <radialGradient id="wb_vig" cx="50%" cy="50%" r="50%">
-          <stop offset="42%" stop-color="#000" stop-opacity="0"/>
-          <stop offset="78%" stop-color="#000" stop-opacity="0.28"/>
-          <stop offset="100%" stop-color="#000" stop-opacity="0.65"/>
-        </radialGradient>
-        <radialGradient id="wb_red" cx="38%" cy="32%" r="65%">
-          <stop offset="0%" stop-color="#FF5533"/>
-          <stop offset="45%" stop-color="#DD1100"/>
-          <stop offset="100%" stop-color="#880000"/>
-        </radialGradient>
-        <radialGradient id="wb_blu" cx="65%" cy="48%" r="55%">
-          <stop offset="0%" stop-color="#5577FF"/>
-          <stop offset="50%" stop-color="#1133CC"/>
-          <stop offset="100%" stop-color="#050E66"/>
-        </radialGradient>
-        <radialGradient id="wb_grn" cx="35%" cy="68%" r="58%">
-          <stop offset="0%" stop-color="#44EE66"/>
-          <stop offset="50%" stop-color="#0A9A30"/>
-          <stop offset="100%" stop-color="#045018"/>
-        </radialGradient>
+        <radialGradient id="wb_base" cx="34%" cy="28%" r="72%"><stop offset="0%" stop-color="#fff"/><stop offset="18%" stop-color="#f8f8f8"/><stop offset="52%" stop-color="#e2e2e2"/><stop offset="82%" stop-color="#aaa"/><stop offset="100%" stop-color="#555"/></radialGradient>
+        <radialGradient id="wb_vig" cx="50%" cy="50%" r="50%"><stop offset="42%" stop-color="#000" stop-opacity="0"/><stop offset="78%" stop-color="#000" stop-opacity="0.28"/><stop offset="100%" stop-color="#000" stop-opacity="0.65"/></radialGradient>
+        <radialGradient id="wb_red" cx="38%" cy="32%" r="65%"><stop offset="0%" stop-color="#FF5533"/><stop offset="45%" stop-color="#DD1100"/><stop offset="100%" stop-color="#880000"/></radialGradient>
+        <radialGradient id="wb_blu" cx="65%" cy="48%" r="55%"><stop offset="0%" stop-color="#5577FF"/><stop offset="50%" stop-color="#1133CC"/><stop offset="100%" stop-color="#050E66"/></radialGradient>
+        <radialGradient id="wb_grn" cx="35%" cy="68%" r="58%"><stop offset="0%" stop-color="#44EE66"/><stop offset="50%" stop-color="#0A9A30"/><stop offset="100%" stop-color="#045018"/></radialGradient>
         <clipPath id="wb_cl"><circle cx="50" cy="50" r="47"/></clipPath>
       </defs>
       <circle cx="50" cy="50" r="47" fill="url(#wb_base)"/>
@@ -79,6 +57,7 @@
   </div>
   </div>
   <nav id="main-nav">
+    <div class="nav-inner">
     <button class="nav-btn active" data-tab="leaderboard">🏆 Leaderboard</button>
     <button class="nav-btn" data-tab="matches">⚽ Matches</button>
     <button class="nav-btn" data-tab="mybets">📊 My Bets</button>
@@ -86,6 +65,7 @@
     <button class="nav-btn nav-btn-ball" data-tab="standings"><svg width="15" height="15" viewBox="0 0 100 100" style="flex-shrink:0"><defs><radialGradient id="nb_b" cx="34%" cy="28%" r="72%"><stop offset="0%" stop-color="#fff"/><stop offset="52%" stop-color="#e2e2e2"/><stop offset="100%" stop-color="#666"/></radialGradient><radialGradient id="nb_v" cx="50%" cy="50%" r="50%"><stop offset="42%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity="0.55"/></radialGradient><clipPath id="nb_c"><circle cx="50" cy="50" r="47"/></clipPath></defs><circle cx="50" cy="50" r="47" fill="url(#nb_b)"/><g clip-path="url(#nb_c)"><path d="M50,3 C58,3 69,7 78,14 C86,21 90,31 88,42 C86,52 79,59 71,63 C64,66 57,64 52,58 C48,53 47,46 50,40 C52,35 55,31 54,25 C52,19 46,13 43,9 C45,5 47,3 50,3Z" fill="#DD1100" opacity="0.9"/><path d="M88,42 C95,55 92,72 82,82 C74,90 62,95 50,96 C46,86 50,74 57,65 C62,58 67,51 69,44 C71,38 70,31 68,25 C72,22 78,26 82,32 C85,35 87,38 88,42Z" fill="#1133CC" opacity="0.9"/><path d="M43,9 C35,8 24,12 16,20 C8,28 4,40 5,52 C6,64 13,75 23,82 C32,88 44,92 55,92 C53,82 48,72 42,64 C37,57 33,49 32,41 C31,33 34,25 39,20 C40,16 41,12 43,9Z" fill="#0A9A30" opacity="0.9"/><path d="M50,3 C47,9 44,15 43,22 C42,29 43,36 46,41" fill="none" stroke="white" stroke-width="3" opacity="0.7"/><path d="M46,41 C48,47 51,52 56,56 C61,59 66,60 70,57" fill="none" stroke="white" stroke-width="3" opacity="0.7"/></g><circle cx="50" cy="50" r="47" fill="url(#nb_v)"/><ellipse cx="29" cy="24" rx="12" ry="8" fill="white" opacity="0.7" transform="rotate(-30,29,24)"/></svg> Standings</button>
     <button class="nav-btn" data-tab="prize">💰 Prize</button>
     <button class="nav-btn" data-tab="admin">⚙️ Admin</button>
+    </div>
   </nav>
 </header>
 
@@ -103,6 +83,7 @@
         <p class="login-text" style="margin-top:16px">Pick your World Cup champion</p>
         <select id="champion-select"><option value="">Select a team...</option></select>
       </div>
+      <div class="login-prize-box" id="login-prize-box-1"></div>
       <button id="login-next-btn" class="btn-primary" disabled>Next: Payment</button>
     </div>
 
@@ -115,11 +96,12 @@
         <button id="pix-copy-btn" class="btn-outline btn-sm">📋 Copy PIX key</button>
         <p id="pix-copied" class="pix-copied" style="display:none">✓ Copied!</p>
       </div>
+      <div class="login-prize-box" id="login-prize-box-2"></div>
       <button id="login-enter-btn" class="btn-primary">Enter the pool</button>
       <p class="login-footnote">Your account will be activated once payment is confirmed.</p>
     </div>
 
-    <p class="login-footnote">14 players · R$75 buy-in · Winner hosts lunch</p>
+    <p class="login-footnote">R$75 buy-in · Winner picks the restaurant</p>
   </div>
 </div>
 
@@ -146,6 +128,7 @@
       <div class="award-card"><div class="award-icon">🔮</div><div class="award-title">The Oracle</div><div class="award-name" id="award-oracle">—</div></div>
       <div class="award-card"><div class="award-icon">🚀</div><div class="award-title">Hot Streak</div><div class="award-name" id="award-streak">—</div></div>
       <div class="award-card"><div class="award-icon">🦥</div><div class="award-title">The Sloth</div><div class="award-name" id="award-sloth">—</div></div>
+      <div class="award-card"><div class="award-icon">🐑</div><div class="award-title">Bandwagon</div><div class="award-name" id="award-bandwagon">—</div></div>
     </div>
     <div class="section-label">📊 Rankings</div>
     <table class="lb-table"><thead><tr><th class="col-rank">#</th><th>Player</th><th class="col-num">Ex</th><th class="col-num">GD</th><th class="col-num">Out</th><th class="col-pts">Points</th></tr></thead><tbody id="lb-body"></tbody></table>
@@ -184,7 +167,7 @@
     <div id="change-champion-section"></div>
   </section>
 
-  <!-- TAB: SCHEDULE (NEW) -->
+  <!-- TAB: SCHEDULE -->
   <section id="tab-schedule" class="tab-content">
     <div class="section-label">🇧🇷 Brazil's path</div>
     <div id="brazil-path"></div>
@@ -231,9 +214,10 @@
     </tbody></table>
     <div class="section-label">🏅 Weekly awards</div>
     <div class="prize-awards-grid">
-      <div class="prize-award"><span>🔮</span><strong>The Oracle</strong><br>Most exact scores that week</div>
-      <div class="prize-award"><span>🚀</span><strong>Hot Streak</strong><br>3+ correct outcomes in a row</div>
-      <div class="prize-award"><span>🦥</span><strong>The Sloth</strong><br>Missed the most bets that week</div>
+      <div class="prize-award"><span>🔮</span><strong>The Oracle</strong><br>Most exact scores</div>
+      <div class="prize-award"><span>🚀</span><strong>Hot Streak</strong><br>Best form in the last 3 matches</div>
+      <div class="prize-award"><span>🦥</span><strong>The Sloth</strong><br>Lowest points (someone has to be last)</div>
+      <div class="prize-award"><span>🐑</span><strong>Bandwagon</strong><br>Bets with the majority most often</div>
     </div>
     <div class="section-label">⚖️ Tiebreaker</div>
     <p class="info-text">If two players finish with the same points: most exact scores wins. Then most goal-difference predictions. Then most correct outcomes. Then earliest registration date.</p>
@@ -294,14 +278,8 @@
 <button id="help-btn" onclick="document.getElementById('help-overlay').classList.add('open')" title="How to play" aria-label="Open help guide">
   <svg width="56" height="56" viewBox="0 0 100 100">
     <defs>
-      <radialGradient id="help_base" cx="34%" cy="28%" r="72%">
-        <stop offset="0%" stop-color="#fff"/><stop offset="18%" stop-color="#f8f8f8"/>
-        <stop offset="52%" stop-color="#e2e2e2"/><stop offset="82%" stop-color="#aaa"/><stop offset="100%" stop-color="#555"/>
-      </radialGradient>
-      <radialGradient id="help_vig" cx="50%" cy="50%" r="50%">
-        <stop offset="42%" stop-color="#000" stop-opacity="0"/><stop offset="78%" stop-color="#000" stop-opacity="0.28"/>
-        <stop offset="100%" stop-color="#000" stop-opacity="0.65"/>
-      </radialGradient>
+      <radialGradient id="help_base" cx="34%" cy="28%" r="72%"><stop offset="0%" stop-color="#fff"/><stop offset="18%" stop-color="#f8f8f8"/><stop offset="52%" stop-color="#e2e2e2"/><stop offset="82%" stop-color="#aaa"/><stop offset="100%" stop-color="#555"/></radialGradient>
+      <radialGradient id="help_vig" cx="50%" cy="50%" r="50%"><stop offset="42%" stop-color="#000" stop-opacity="0"/><stop offset="78%" stop-color="#000" stop-opacity="0.28"/><stop offset="100%" stop-color="#000" stop-opacity="0.65"/></radialGradient>
       <radialGradient id="help_red" cx="38%" cy="32%" r="65%"><stop offset="0%" stop-color="#FF5533"/><stop offset="45%" stop-color="#DD1100"/><stop offset="100%" stop-color="#880000"/></radialGradient>
       <radialGradient id="help_blu" cx="65%" cy="48%" r="55%"><stop offset="0%" stop-color="#5577FF"/><stop offset="50%" stop-color="#1133CC"/><stop offset="100%" stop-color="#050E66"/></radialGradient>
       <radialGradient id="help_grn" cx="35%" cy="68%" r="58%"><stop offset="0%" stop-color="#44EE66"/><stop offset="50%" stop-color="#0A9A30"/><stop offset="100%" stop-color="#045018"/></radialGradient>
@@ -413,7 +391,7 @@
       <div class="help-tab-row"><span class="help-tab-icon">⚽</span><div><span class="help-tab-name">Matches:</span> place and update bets, see what others predicted, check odds and match facts</div></div>
       <div class="help-tab-row"><span class="help-tab-icon">📊</span><div><span class="help-tab-name">My Bets:</span> your personal history, streak, and champion pick</div></div>
       <div class="help-tab-row"><span class="help-tab-icon">📅</span><div><span class="help-tab-name">Schedule:</span> full tournament schedule, group tables, and Brazil's path</div></div>
-      <div class="help-tab-row"><span class="help-tab-icon">⚽</span><div><span class="help-tab-name">Standings:</span> FIFA-style group tables showing GP, W, D, L, GF, GA, GD and points for all 12 groups. Updates live as results come in. Group C (Brazil) shown first.</div></div>
+      <div class="help-tab-row"><span class="help-tab-icon">⚽</span><div><span class="help-tab-name">Standings:</span> FIFA-style group tables with GP, W, D, L, GF, GA, GD and points. Group C (Brazil) shown first. Updates live.</div></div>
       <div class="help-tab-row"><span class="help-tab-icon">💰</span><div><span class="help-tab-name">Prize:</span> prize structure, full rules, and tiebreaker details</div></div>
     </div>
 
