@@ -696,24 +696,21 @@ function renderAwards(){
     }
   }
 
-  // BANDWAGON: bets with the majority most often
+  // HEARTBREAKER: most bets off by exactly one goal total (so close yet so far)
   if(sids.length>0){
     let best={name:'—',count:-1};
     stats.forEach(s=>{
-      let withMajority=0;
+      let heartbreaks=0;
       sids.forEach(mid=>{
-        const bet=allBets[mid]?.[s.id]; if(!bet)return;
-        const mBets=allBets[mid]||{}; let h=0,t=0,a=0;
-        Object.values(mBets).forEach(b=>{const d=b.h-b.a; if(d>0)h++;else if(d<0)a++;else t++;});
-        const total=h+t+a; if(total<2)return;
-        const maxOutcome=Math.max(h,t,a);
-        const myOutcome=bet.h>bet.a?h:bet.h<bet.a?a:t;
-        if(myOutcome===maxOutcome)withMajority++;
+        const bet=allBets[mid]?.[s.id], res=matchResults[mid];
+        if(!bet||!res)return;
+        const diff=Math.abs(bet.h-res.h)+Math.abs(bet.a-res.a);
+        if(diff===1)heartbreaks++;
       });
-      if(withMajority>best.count)best={name:shortName(s),count:withMajority};
+      if(heartbreaks>best.count)best={name:shortName(s),count:heartbreaks};
     });
-    const bwEl=document.getElementById('award-bandwagon');
-    if(bwEl)bwEl.textContent=best.count>0?best.name:'—';
+    const hbEl=document.getElementById('award-heartbreaker');
+    if(hbEl)hbEl.textContent=best.count>0?best.name:'—';
   }
 }
 
@@ -781,9 +778,9 @@ function renderMatchCard(m,now,showFact){
   // Action button
   let actionBtn='';
   if(isLive){actionBtn=`<span class="live-badge"><span class="live-dot"></span> LIVE ${liveData.minute||''}'</span>`}
-  else if(res){const sc=`${res.h}×${res.a}`; let rb=''; if(bet){const pt=calcPts(bet.h,bet.a,res.h,res.a);
+  else if(res){const sc=`${res.h}×${res.a}`; const tagBadge=res.tag?`<span class="ko-tag-badge ko-tag-${res.tag.toLowerCase()}">${res.tag}${res.tag==='PSO'&&res.pen?' '+res.pen:''}</span>`:''; let rb=''; if(bet){const pt=calcPts(bet.h,bet.a,res.h,res.a);
     if(pt){const lb={exact:'Exact +10',gd:'GD +5',outcome:'Outcome +3',wrong:'Wrong'};const cl={exact:'result-exact',gd:'result-gd',outcome:'result-outcome',wrong:'result-wrong'};
-    rb=`<span class="match-result ${cl[pt.t]}">${lb[pt.t]}</span>`}} actionBtn=`<span style="font-size:12px;color:var(--text-muted)">Final: ${sc}</span> ${rb}`}
+    rb=`<span class="match-result ${cl[pt.t]}">${lb[pt.t]}</span>`}} actionBtn=`<span style="font-size:12px;color:var(--text-muted)">Final: ${sc} ${tagBadge}</span> ${rb}`}
   else if(locked)actionBtn=`<button class="match-bet-btn locked-btn">${bet?`🔒 ${bet.h}×${bet.a}`:'🔒 Locked'}</button>`;
   else if(pending)actionBtn=`<button class="match-bet-btn locked-btn">Activate to bet</button>`;
   else if(bet)actionBtn=`<button class="match-bet-btn" data-mid="${m.id}">Update bet</button>`;
@@ -830,7 +827,7 @@ function renderMatchCard(m,now,showFact){
     ${m.g?`<span class="match-group">Group ${m.g}</span>`:m.r?`<span class="match-group">${m.r}</span>`:''}${timeDisplay}
     ${!isLive?`<span class="match-info">📍 ${m.v}</span>`:''}${countdownHtml}</div>${actionBtn}</div>
     ${oddsHtml}
-    ${bc>0?`<div class="bets-peek">${renderBetDist(mBets,hm,aw)}<div class="bets-peek-label">${bc} of ${PLAYERS.length} bets</div><div class="peek-row">${peekHtml}</div></div>`:''}</div>`;
+    ${bc>0&&(locked||res||isLive)?`<div class="bets-peek">${renderBetDist(mBets,hm,aw)}<div class="bets-peek-label">${bc} of ${PLAYERS.length} bets</div><div class="peek-row">${peekHtml}</div></div>`:bc>0?`<div class="bets-peek"><div class="bets-peek-label">${bc} of ${PLAYERS.length} bets placed (hidden until lockout)</div></div>`:''}</div>`;
 }
 
 // ===== BET DISTRIBUTION BAR =====
@@ -1098,14 +1095,23 @@ function renderAdmin(){
   document.getElementById('admin-settled').innerHTML=!done.length?'<p class="info-text">No results yet</p>':
     done.slice(-10).map(m=>adminMatchCard(m,true)).join('');
   document.getElementById('admin-pending').querySelectorAll('.btn-admin-save').forEach(b=>b.addEventListener('click',()=>saveResult(b.dataset.mid)));
+  document.getElementById('admin-pending').querySelectorAll('.admin-ko-sel').forEach(sel=>{sel.addEventListener('change',()=>{const penInput=sel.nextElementSibling;if(penInput)penInput.style.display=sel.value==='PSO'?'':'none'})});
 }
 
 function adminMatchCard(m,settled){
   const hm=T[m.h],aw=T[m.a],res=matchResults[m.id],bc=Object.keys(allBets[m.id]||{}).length;
+  const isKO=!!m.r;
+  const tagVal=res?.tag||'';
+  const penVal=res?.pen||'';
+  const koHtml=isKO?`<div class="admin-ko-row">${settled?
+    (tagVal?`<span class="ko-tag-badge ko-tag-${tagVal.toLowerCase()}">${tagVal}${tagVal==='PSO'&&penVal?' '+penVal:''}</span>`:''):
+    `<select class="admin-ko-sel" id="atag-${m.id}"><option value="">Regular</option><option value="AET"${tagVal==='AET'?' selected':''}>AET</option><option value="PSO"${tagVal==='PSO'?' selected':''}>PSO</option></select>
+    <input type="text" class="admin-pen-input" id="apen-${m.id}" placeholder="e.g. 4-2" value="${penVal}" style="width:60px;${tagVal==='PSO'?'':'display:none'}">`}</div>`:'';
   return `<div class="admin-match"><div class="admin-match-row"><span class="admin-match-teams">${hm.f} ${hm.n} vs ${aw.n} ${aw.f}</span>
     <div class="admin-match-inputs"><input type="number" class="admin-score-input${settled?' filled':''}" id="ah-${m.id}" min="0" max="20" value="${res?res.h:''}" ${settled?'disabled':''}>
     <span class="score-sep">×</span><input type="number" class="admin-score-input${settled?' filled':''}" id="aa-${m.id}" min="0" max="20" value="${res?res.a:''}" ${settled?'disabled':''}></div>
     ${settled?'<span class="btn-admin-saved">✓ Saved</span>':`<button class="btn-admin-save" data-mid="${m.id}">Save</button>`}</div>
+    ${koHtml}
     <div class="admin-match-meta"><span>👥 ${bc} bets</span></div></div>`;
 }
 
@@ -1113,6 +1119,9 @@ function saveResult(mid){
   const h=document.getElementById(`ah-${mid}`).value,a=document.getElementById(`aa-${mid}`).value;
   if(h===''||a==='')return alert('Enter both scores');
   const res={h:+h,a:+a,ts:Date.now()};
+  const tagEl=document.getElementById(`atag-${mid}`);
+  const penEl=document.getElementById(`apen-${mid}`);
+  if(tagEl&&tagEl.value){res.tag=tagEl.value;if(penEl&&penEl.value)res.pen=penEl.value;}
   if(db)db.ref(`results/${mid}`).set(res); else{matchResults[mid]=res;saveLS();renderAll()}
   renderAdmin();
 }
