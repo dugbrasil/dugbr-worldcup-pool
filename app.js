@@ -173,7 +173,7 @@ const M = [
 // Round of 16 (July 4-7)
 {id:"r17",h:"CAN",a:"MAR",g:null,k:"2026-07-04T17:00Z",v:"Houston",r:"R16"},
 {id:"r18",h:"PRY",a:"FRA",g:null,k:"2026-07-04T21:00Z",v:"Philadelphia",r:"R16"},
-{id:"r19",h:"BRZ",a:"NOR",g:null,k:"2026-07-05T20:00Z",v:"New York NJ",r:"R16"},
+{id:"r19",h:"BRA",a:"NOR",g:null,k:"2026-07-05T20:00Z",v:"New York NJ",r:"R16"},
 {id:"r20",h:"MEX",a:"ENG",g:null,k:"2026-07-06T00:00Z",v:"Mexico City",r:"R16"},
 {id:"r21",h:"POR",a:"ESP",g:null,k:"2026-07-06T19:00Z",v:"Dallas",r:"R16"},
 {id:"r22",h:"USA",a:"BEL",g:null,k:"2026-07-07T00:00Z",v:"Seattle",r:"R16"},
