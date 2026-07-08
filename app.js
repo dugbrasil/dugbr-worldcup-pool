@@ -180,10 +180,10 @@ const M = [
 {id:"r23",h:"ARG",a:"EGY",g:null,k:"2026-07-07T16:00Z",v:"Atlanta",r:"R16"},
 {id:"r24",h:"SUI",a:"COL",g:null,k:"2026-07-07T20:00Z",v:"Vancouver",r:"R16"},
 // Quarter-finals (July 9-11)
-{id:"r25",h:"TBD",a:"TBD",g:null,k:"2026-07-09T20:00Z",v:"Boston",r:"QF"},
-{id:"r26",h:"TBD",a:"TBD",g:null,k:"2026-07-10T19:00Z",v:"Los Angeles",r:"QF"},
-{id:"r27",h:"TBD",a:"TBD",g:null,k:"2026-07-11T20:00Z",v:"Miami",r:"QF"},
-{id:"r28",h:"TBD",a:"TBD",g:null,k:"2026-07-12T01:00Z",v:"Kansas City",r:"QF"},
+{id:"r25",h:"FRA",a:"MAR",g:null,k:"2026-07-09T20:00Z",v:"Boston",r:"QF"},
+{id:"r26",h:"ESP",a:"BEL",g:null,k:"2026-07-10T19:00Z",v:"Los Angeles",r:"QF"},
+{id:"r27",h:"NOR",a:"ENG",g:null,k:"2026-07-11T20:00Z",v:"Miami",r:"QF"},
+{id:"r28",h:"ARG",a:"SUI",g:null,k:"2026-07-12T01:00Z",v:"Kansas City",r:"QF"},
 // Semi-finals (July 14-15)
 {id:"r29",h:"TBD",a:"TBD",g:null,k:"2026-07-14T19:00Z",v:"Dallas",r:"SF"},
 {id:"r30",h:"TBD",a:"TBD",g:null,k:"2026-07-15T19:00Z",v:"Atlanta",r:"SF"},
