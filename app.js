@@ -185,8 +185,8 @@ const M = [
 {id:"r27",h:"NOR",a:"ENG",g:null,k:"2026-07-11T20:00Z",v:"Miami",r:"QF"},
 {id:"r28",h:"ARG",a:"SUI",g:null,k:"2026-07-12T01:00Z",v:"Kansas City",r:"QF"},
 // Semi-finals (July 14-15)
-{id:"r29",h:"TBD",a:"TBD",g:null,k:"2026-07-14T19:00Z",v:"Dallas",r:"SF"},
-{id:"r30",h:"TBD",a:"TBD",g:null,k:"2026-07-15T19:00Z",v:"Atlanta",r:"SF"},
+{id:"r29",h:"FRA",a:"ESP",g:null,k:"2026-07-14T19:00Z",v:"Dallas",r:"SF"},
+{id:"r30",h:"ENG",a:"ARG",g:null,k:"2026-07-15T19:00Z",v:"Atlanta",r:"SF"},
 // 3rd place + Final
 {id:"r31",h:"TBD",a:"TBD",g:null,k:"2026-07-18T21:00Z",v:"Miami",r:"3rd"},
 {id:"r32",h:"TBD",a:"TBD",g:null,k:"2026-07-19T19:00Z",v:"New York NJ",r:"Final"}
